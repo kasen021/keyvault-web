@@ -15,10 +15,10 @@ class UpgradeActivity : AppCompatActivity() {
         val root = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; setPadding(48, 48, 48, 48) }
         root.addView(TextView(this).apply { text = "Upgrade Key Vault"; textSize = 22f })
         root.addView(TextView(this).apply {
-            text = "CYBORG (~Rp20.000):\n$BTC_CYBORG\n\nCYPHERSTAR (~Rp50.000):\n$BTC_CYPHERSTAR\n\nHarga Bitcoin mengikuti CoinGecko secara otomatis.\nFee ditanggung sendiri. Kirim TXID setelah bayar."
+            text = "CYBORG (~Rp20.000):\n$BTC_CYBORG\n\nCYPHERSTAR (~Rp50.000):\n$BTC_CYPHERSTAR\n\nHarga Bitcoin mengikuti CoinGecko otomatis.\nFee ditanggung sendiri.\nSatu TXID hanya bisa dipakai sekali."
             textSize = 13f; setPadding(0, 16, 0, 16)
         })
-        val txInput = EditText(this).apply { hint = "Tempel TXID di sini (64 karakter)" }
+        val txInput = EditText(this).apply { hint = "Tempel TXID (64 karakter)" }
         root.addView(txInput)
         root.addView(Button(this).apply {
             text = "Verifikasi & Aktifkan Cyborg"
@@ -42,8 +42,9 @@ class UpgradeActivity : AppCompatActivity() {
 
     private fun verify(txid: String, tier: Tier) {
         if (txid.length != 64) { Toast.makeText(this, "TXID harus 64 karakter", Toast.LENGTH_SHORT).show(); return }
+        if (Session.isTxidUsed(this, txid)) { Toast.makeText(this, "TXID sudah pernah dipakai di perangkat ini", Toast.LENGTH_LONG).show(); return }
         val addr = if (tier == Tier.CYBORG) BTC_CYBORG else BTC_CYPHERSTAR
-        Toast.makeText(this, "Memverifikasi...", Toast.LENGTH_SHORT).show()
+        Toast.makeText(this, "Memverifikasi ke mempool.space...", Toast.LENGTH_SHORT).show()
         Thread {
             try {
                 val minSat = getMinSat(tier)
@@ -54,8 +55,17 @@ class UpgradeActivity : AppCompatActivity() {
                     if (o.optString("scriptpubkey_address") == addr && o.getLong("value") >= minSat) { found = true; break }
                 }
                 runOnUiThread {
-                    if (found) { Session.verifyAndUpgrade(this, txid, tier); Toast.makeText(this, "${tier.name} aktif! Restart app.", Toast.LENGTH_LONG).show(); finish() }
-                    else Toast.makeText(this, "Tidak ditemukan ke $addr min $minSat sat", Toast.LENGTH_LONG).show()
+                    if (found) {
+                        try {
+                            Session.verifyAndUpgrade(this, txid, tier)
+                            Toast.makeText(this, "${tier.name} aktif! Restart app.", Toast.LENGTH_LONG).show()
+                            finish()
+                        } catch (e: Exception) {
+                            Toast.makeText(this, e.message, Toast.LENGTH_LONG).show()
+                        }
+                    } else {
+                        Toast.makeText(this, "Tidak ditemukan pembayaran ke $addr min $minSat sat", Toast.LENGTH_LONG).show()
+                    }
                 }
             } catch (e: Exception) { runOnUiThread { Toast.makeText(this, "Gagal: ${e.message}", Toast.LENGTH_LONG).show() } }
         }.start()

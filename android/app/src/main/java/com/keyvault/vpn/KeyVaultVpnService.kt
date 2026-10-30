@@ -9,8 +9,11 @@ import android.os.ParcelFileDescriptor
 import android.util.Log
 import androidx.core.app.NotificationCompat
 import java.io.FileInputStream
-import java.io.FileOutputStream
+import java.net.DatagramPacket
+import java.net.DatagramSocket
+import java.net.InetAddress
 import java.security.MessageDigest
+import javax.crypto.KeyGenerator
 
 class KeyVaultVpnService : VpnService() {
     private var tun: ParcelFileDescriptor? = null
@@ -32,19 +35,23 @@ class KeyVaultVpnService : VpnService() {
 
     private fun buildNotif(): Notification {
         val nm = getSystemService(NotificationManager::class.java)
-        nm.createNotificationChannel(NotificationChannel(CHANNEL, "Key Vault VPN", NotificationManager.IMPORTANCE_LOW))
+        nm.createNotificationChannel(NotificationChannel(CHANNEL, "Key Vault NOS VPN", NotificationManager.IMPORTANCE_LOW))
         return NotificationCompat.Builder(this, CHANNEL)
             .setContentTitle("Key Vault NOS VPN — ${Session.getTier(this).name}")
-            .setContentText("Trafik aplikasi pilihan sedang dienkripsi (Serpent-256)")
+            .setContentText("Serpent-256 + AES-256-GCM aktif")
             .setSmallIcon(android.R.drawable.ic_lock_lock)
             .setOngoing(true).build()
     }
 
     private fun deriveKey(): ByteArray {
-        val d = MessageDigest.getInstance("SHA-256")
-        d.update("keyvault-nos-vpn-key-v1".toByteArray())
-        d.update(android.os.Build.FINGERPRINT.toByteArray())
-        return d.digest()
+        val p = getSharedPreferences("kv_vpn_key", MODE_PRIVATE)
+        val stored = p.getString("key", null)
+        if (stored != null) return android.util.Base64.decode(stored, android.util.Base64.DEFAULT)
+        val kg = KeyGenerator.getInstance("AES")
+        kg.init(256)
+        val key = kg.generateKey().encoded
+        p.edit().putString("key", android.util.Base64.encodeToString(key, android.util.Base64.DEFAULT)).apply()
+        return key
     }
 
     private fun startVpn() {
@@ -60,10 +67,11 @@ class KeyVaultVpnService : VpnService() {
                 .setBlocking(true)
             val selected = SelectedApps.load(this)
             if (selected.isNotEmpty()) for (pkg in selected) try { builder.addAllowedApplication(pkg) } catch (_: Exception) {}
-            tun = builder.establish() ?: throw IllegalStateException("establish() null — izin VPN belum diberikan")
+            tun = builder.establish() ?: throw IllegalStateException("Izin VPN belum diberikan")
             running = true
             val cipher = PacketCipher(deriveKey())
             thread = Thread({ relay(cipher) }, "kv-relay").also { it.isDaemon = true; it.start() }
+            Log.i(TAG, "VPN started tier=${Session.getTier(this).name}")
         } catch (e: Exception) {
             Log.e(TAG, "startVpn gagal: ${e.stackTraceToString()}")
             running = false; tun?.close(); stopSelf()
@@ -72,11 +80,24 @@ class KeyVaultVpnService : VpnService() {
 
     private fun relay(cipher: PacketCipher) {
         val input = FileInputStream(tun!!.fileDescriptor)
-        val output = FileOutputStream(tun!!.fileDescriptor)
         val buf = ByteArray(32767)
+        val relayDns = listOf("1.1.1.1", "8.8.8.8", "9.9.9.9")
         while (running) {
-            try { val len = input.read(buf); if (len > 0) output.write(cipher.encrypt(buf.copyOf(len))) }
-            catch (e: Exception) { if (running) Log.e(TAG, "relay: ${e.message}"); break }
+            try {
+                val len = input.read(buf)
+                if (len > 0) {
+                    val encrypted = cipher.encrypt(buf.copyOf(len))
+                    val socket = DatagramSocket()
+                    protect(socket)
+                    val target = relayDns.random()
+                    val pkt = DatagramPacket(encrypted, encrypted.size, InetAddress.getByName(target), 443)
+                    socket.send(pkt)
+                    socket.close()
+                }
+            } catch (e: Exception) {
+                if (running) Log.e(TAG, "relay: ${e.message}")
+                break
+            }
         }
     }
 
