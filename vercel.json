@@ -1,5 +1,9 @@
 {
   "version": 2,
+  "routes": [
+    { "src": "/consultant/(.*)", "dest": "/consultant/$1" },
+    { "src": "/api/(.*)", "dest": "/api/$1" }
+  ],
   "headers": [{ "source": "/api/(.*)", "headers": [
     { "key": "Access-Control-Allow-Origin", "value": "*" },
     { "key": "Access-Control-Allow-Methods", "value": "POST, GET, OPTIONS" },
