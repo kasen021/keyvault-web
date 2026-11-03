@@ -1,0 +1,492 @@
+cat > ~/keyvault-web/consultant/index.html << 'HTMLEOF'
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cryptography Consultant — Katoshi Elito Globatos</title>
+<style>
+  :root {
+    --bg: #070d18;
+    --card: #0e1a2e;
+    --border: #1a2f4a;
+    --accent: #3fa9f5;
+    --accent2: #00e5a0;
+    --warn: #f5a623;
+    --rare: #c678ff;
+    --text: #e8f0fe;
+    --muted: #7a92b0;
+    --danger: #ff4d6d;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text); font-family: 'Segoe UI', system-ui, sans-serif; min-height: 100vh; }
+  header { background: linear-gradient(135deg, #0a1628 0%, #0d2040 100%); border-bottom: 1px solid var(--border); padding: 2rem 1.5rem 1.5rem; text-align: center; }
+  header h1 { font-size: 2rem; font-weight: 700; color: var(--accent); letter-spacing: -0.5px; }
+  header p { color: var(--muted); margin-top: 0.5rem; font-size: 0.95rem; }
+  .badge-row { display: flex; justify-content: center; gap: 0.5rem; margin-top: 1rem; flex-wrap: wrap; }
+  .badge { padding: 0.25rem 0.75rem; border-radius: 999px; font-size: 0.78rem; font-weight: 600; }
+  .badge-blue { background: #1a3a5c; color: var(--accent); }
+  .badge-green { background: #0d2e22; color: var(--accent2); }
+  .badge-purple { background: #1e1040; color: var(--rare); }
+  nav { background: #0a1628; border-bottom: 1px solid var(--border); display: flex; gap: 0; overflow-x: auto; }
+  nav a { padding: 0.85rem 1.25rem; color: var(--muted); text-decoration: none; font-size: 0.88rem; white-space: nowrap; border-bottom: 2px solid transparent; transition: all 0.2s; }
+  nav a:hover, nav a.active { color: var(--accent); border-bottom-color: var(--accent); }
+  main { max-width: 960px; margin: 0 auto; padding: 2rem 1rem 4rem; }
+  section { display: none; }
+  section.active { display: block; }
+  .hero { text-align: center; padding: 2rem 0 3rem; }
+  .hero h2 { font-size: 1.6rem; font-weight: 700; margin-bottom: 1rem; }
+  .hero p { color: var(--muted); max-width: 600px; margin: 0 auto 2rem; line-height: 1.7; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1rem; }
+  .card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 1.5rem; transition: border-color 0.2s, transform 0.2s; cursor: pointer; }
+  .card:hover { border-color: var(--accent); transform: translateY(-2px); }
+  .card.rare { border-color: #2a1050; }
+  .card.rare:hover { border-color: var(--rare); }
+  .card.paid { border-color: #1a2e1a; }
+  .card.paid:hover { border-color: var(--accent2); }
+  .card-icon { font-size: 2rem; margin-bottom: 0.75rem; }
+  .card h3 { font-size: 1rem; font-weight: 600; margin-bottom: 0.5rem; display: flex; align-items: center; gap: 0.5rem; }
+  .card p { color: var(--muted); font-size: 0.87rem; line-height: 1.6; }
+  .tag { font-size: 0.7rem; padding: 0.15rem 0.5rem; border-radius: 4px; font-weight: 600; }
+  .tag-free { background: #0d2030; color: var(--accent); }
+  .tag-paid { background: #0d2e22; color: var(--accent2); }
+  .tag-rare { background: #1e1040; color: var(--rare); }
+  .detail { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 2rem; margin-top: 2rem; }
+  .detail h2 { font-size: 1.4rem; margin-bottom: 0.5rem; }
+  .detail .sub { color: var(--muted); font-size: 0.9rem; margin-bottom: 1.5rem; line-height: 1.6; }
+  .detail-section { margin-top: 1.5rem; }
+  .detail-section h4 { font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); margin-bottom: 0.75rem; }
+  .feature-list { list-style: none; display: flex; flex-direction: column; gap: 0.5rem; }
+  .feature-list li { font-size: 0.9rem; color: var(--text); display: flex; gap: 0.5rem; align-items: flex-start; }
+  .feature-list li::before { content: "→"; color: var(--accent); flex-shrink: 0; }
+  .price-box { display: inline-block; background: #0d2e22; border: 1px solid #1a4a2e; border-radius: 8px; padding: 0.75rem 1.5rem; margin-top: 1rem; }
+  .price-box .amount { font-size: 1.4rem; font-weight: 700; color: var(--accent2); }
+  .price-box .note { font-size: 0.8rem; color: var(--muted); margin-top: 0.25rem; }
+  .btc-addr { background: #0a1628; border: 1px solid var(--border); border-radius: 8px; padding: 0.75rem 1rem; font-family: monospace; font-size: 0.85rem; color: var(--accent); word-break: break-all; margin-top: 0.75rem; cursor: pointer; }
+  .btc-addr:hover { border-color: var(--accent); }
+  .vpn-tiers { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1rem; margin-top: 1rem; }
+  .tier-card { border-radius: 10px; padding: 1.25rem; }
+  .tier-genkai { background: #0d1e30; border: 1px solid #1a3a5c; }
+  .tier-cyborg { background: #0d2e22; border: 1px solid #1a4a2e; }
+  .tier-cypherstar { background: #1a0d30; border: 1px solid #3a1a5c; }
+  .tier-card h4 { font-size: 1rem; font-weight: 700; margin-bottom: 0.5rem; }
+  .tier-card .price { font-size: 1.2rem; font-weight: 700; margin: 0.5rem 0; }
+  .tier-card ul { list-style: none; font-size: 0.83rem; color: var(--muted); display: flex; flex-direction: column; gap: 0.3rem; }
+  .tier-card ul li::before { content: "✓ "; color: var(--accent2); }
+  .btn { display: inline-block; padding: 0.6rem 1.25rem; border-radius: 8px; font-size: 0.9rem; font-weight: 600; cursor: pointer; border: none; text-decoration: none; transition: opacity 0.2s; }
+  .btn:hover { opacity: 0.85; }
+  .btn-primary { background: var(--accent); color: #07111f; }
+  .btn-green { background: var(--accent2); color: #071a12; }
+  .btn-purple { background: var(--rare); color: #0d0720; }
+  .rare-counter { background: #1e1040; border: 1px solid #3a1a5c; border-radius: 10px; padding: 1.25rem; margin-top: 1rem; text-align: center; }
+  .rare-counter .slots { font-size: 2.5rem; font-weight: 700; color: var(--rare); }
+  .rare-counter p { color: var(--muted); font-size: 0.85rem; margin-top: 0.5rem; }
+  .warning-box { background: #1e0e00; border: 1px solid #4a2000; border-radius: 8px; padding: 1rem; margin-top: 1rem; font-size: 0.87rem; color: var(--warn); }
+  .contact-info { margin-top: 1.5rem; background: #0a1628; border: 1px solid var(--border); border-radius: 8px; padding: 1rem 1.25rem; font-size: 0.88rem; }
+  .contact-info a { color: var(--accent); }
+  footer { text-align: center; color: var(--muted); font-size: 0.8rem; padding: 2rem; border-top: 1px solid var(--border); margin-top: 4rem; }
+  .back-btn { color: var(--muted); font-size: 0.85rem; cursor: pointer; margin-bottom: 1.5rem; display: inline-flex; align-items: center; gap: 0.4rem; background: none; border: none; }
+  .back-btn:hover { color: var(--text); }
+  @media (max-width: 600px) { header h1 { font-size: 1.5rem; } .detail { padding: 1.25rem; } }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>🔐 Cryptography Consultant</h1>
+  <p>Oleh Katoshi Elito Globatos · Key Vault</p>
+  <div class="badge-row">
+    <span class="badge badge-blue">Enkripsi</span>
+    <span class="badge badge-blue">Hashing</span>
+    <span class="badge badge-blue">Tanda Tangan Digital</span>
+    <span class="badge badge-green">VPN</span>
+    <span class="badge badge-purple">Analisis Kriptografi</span>
+  </div>
+</header>
+
+<nav>
+  <a href="#" class="active" onclick="showSection('home',this)">Beranda</a>
+  <a href="#" onclick="showSection('nos',this)">NOS VPN</a>
+  <a href="#" onclick="showSection('tools',this)">Tools Gratis</a>
+  <a href="#" onclick="showSection('premium',this)">Premium</a>
+  <a href="#" onclick="showSection('rare',this)">Rare</a>
+  <a href="#" onclick="showSection('kontak',this)">Kontak</a>
+</nav>
+
+<main>
+
+<!-- HOME -->
+<section id="home" class="active">
+  <div class="hero">
+    <h2>Keamanan Digital yang Nyata, Bukan Label</h2>
+    <p>Semua layanan di sini menggunakan kriptografi sungguhan yang bisa diverifikasi. Tidak ada klaim keamanan yang tidak bisa dibuktikan.</p>
+  </div>
+  <div class="grid">
+    <div class="card" onclick="showSection('nos', document.querySelector('nav a:nth-child(2)'))">
+      <div class="card-icon">🌐</div>
+      <h3>NOS VPN <span class="tag tag-free">GRATIS</span></h3>
+      <p>Network of Scope — VPN terdesentralisasi P2P dengan 3 tier. GENKAI gratis, CYBORG dan CYPHERSTAR berbayar.</p>
+    </div>
+    <div class="card" onclick="showDetail('cryptPhone')">
+      <div class="card-icon">📱</div>
+      <h3>Crypt The Phone <span class="tag tag-free">GRATIS</span></h3>
+      <p>Analisa kriptografi smartphone berdasarkan model/seri. Rating keamanan, konsumsi daya, dan kontrol pengguna.</p>
+    </div>
+    <div class="card" onclick="showDetail('hashor')">
+      <div class="card-icon">🔍</div>
+      <h3>Hashor <span class="tag tag-free">GRATIS</span></h3>
+      <p>Bandingkan 2 file atau 2 URL untuk deteksi pemalsuan dan phishing. Hash to text (decrypt) tersedia.</p>
+    </div>
+    <div class="card" onclick="showDetail('encryptSsstt')">
+      <div class="card-icon">🤫</div>
+      <h3>Encrypt Your Ssstt <span class="tag tag-free">GRATIS</span></h3>
+      <p>Enkripsi berbasis kondisi aplikasi. Auto decrypt saat aplikasi dibuka, enkripsi kembali 2 detik saat tidak digunakan.</p>
+    </div>
+    <div class="card paid" onclick="showDetail('genCryptos')">
+      <div class="card-icon">⚙️</div>
+      <h3>Gen Cryptos <span class="tag tag-paid">Rp250.000</span></h3>
+      <p>Generator kriptografi untuk aplikasi smartphone. Full Mode, Balance Mode, Save Mode. Monitor mini bar real-time.</p>
+    </div>
+    <div class="card paid" onclick="showDetail('blockchainJasa')">
+      <div class="card-icon">⛓️</div>
+      <h3>Blockchain <span class="tag tag-paid">Rp800.000</span></h3>
+      <p>Sediakan blockchain untuk kebutuhan spesifik: pembayaran, absensi, laporan keuangan, atau penyimpanan data besar.</p>
+    </div>
+    <div class="card paid" onclick="showDetail('cryptanalysis')">
+      <div class="card-icon">🧬</div>
+      <h3>Cryptanalysis <span class="tag tag-paid">Rp10.000.000</span></h3>
+      <p>Analisa penuh dan modelling kriptografi suatu aplikasi atau website besar secara private.</p>
+    </div>
+    <div class="card rare" onclick="showDetail('iAmInYourPhone')">
+      <div class="card-icon">👁️</div>
+      <h3>I Am In Your Phone <span class="tag tag-rare">RARE</span></h3>
+      <p>Analisa kriptografi real-time dari smartphone yang sedang digunakan. 25 slot, reset tiap 48 jam.</p>
+    </div>
+    <div class="card rare" onclick="showDetail('iKnowYourSecret')">
+      <div class="card-icon">🤐</div>
+      <h3>I Know Your Secret <span class="tag tag-rare">GRATIS</span></h3>
+      <p>Bagikan informasi sensitif hanya kepada orang yang kamu tuju. Orang tertentu bisa dikecualikan.</p>
+    </div>
+  </div>
+</section>
+
+<!-- NOS VPN -->
+<section id="nos">
+  <h2 style="margin-bottom:0.5rem">NOS VPN — Network of Scope</h2>
+  <p style="color:var(--muted);margin-bottom:2rem;font-size:0.9rem;line-height:1.7">VPN terdesentralisasi P2P. Setiap perangkat yang mengaktifkan VPN ikut menjadi node jaringan. Enkripsi Serpent-256 + AES-256-GCM berlapis. 10 DNS load balancing, bukan failover.</p>
+  <div class="vpn-tiers">
+    <div class="tier-card tier-genkai">
+      <h4 style="color:var(--accent)">GENKAI</h4>
+      <div class="price" style="color:var(--accent)">Gratis</div>
+      <ul>
+        <li>Enkripsi acak (Serpent/ARIA/CAST/X448/RSA)</li>
+        <li>Regional — negara terdekat</li>
+        <li>Maks 30 pengguna per DNS</li>
+        <li>Sesi 1 jam, sambung ulang manual</li>
+        <li>Monitor asal instalasi aplikasi</li>
+      </ul>
+    </div>
+    <div class="tier-card tier-cyborg">
+      <h4 style="color:var(--accent2)">CYBORG</h4>
+      <div class="price" style="color:var(--accent2)">Rp20.000</div>
+      <p style="font-size:0.78rem;color:var(--muted);margin-bottom:0.5rem">Permanent subscription</p>
+      <ul>
+        <li>Enkripsi acak + RIPEMD-320</li>
+        <li>DNS terbaik otomatis</li>
+        <li>Semua fitur GENKAI</li>
+        <li>Tidak ada batas waktu sesi</li>
+      </ul>
+      <div class="btc-addr" onclick="copyAddr(this)" title="Klik untuk salin">19EeAmjHcBrddqwBQ8AKNsYWy84eXViAP3</div>
+    </div>
+    <div class="tier-card tier-cypherstar">
+      <h4 style="color:var(--rare)">CYPHERSTAR</h4>
+      <div class="price" style="color:var(--rare)">Rp50.000</div>
+      <p style="font-size:0.78rem;color:var(--muted);margin-bottom:0.5rem">Permanent subscription</p>
+      <ul>
+        <li>Kombinasi enkripsi+hashing+tanda tangan bebas</li>
+        <li>Mixnet — koordinat Haversine</li>
+        <li>Tanda tangan digital aktif</li>
+        <li>Semua fitur CYBORG</li>
+      </ul>
+      <div class="btc-addr" onclick="copyAddr(this)" title="Klik untuk salin">12EDhTKuQY5yarNA3SJHtL9NmRiAEMZwA3</div>
+    </div>
+  </div>
+  <div class="warning-box">⚠️ Harga Bitcoin mengikuti CoinGecko secara otomatis. Fee transaksi Bitcoin ditanggung sendiri. Satu TXID hanya bisa dipakai sekali. Kirim TXID ke kontak setelah pembayaran.</div>
+  <div style="margin-top:1.5rem">
+    <a href="https://github.com/kasen021/keyvault-web/releases" target="_blank" class="btn btn-primary">Download APK NOS VPN</a>
+  </div>
+</section>
+
+<!-- TOOLS GRATIS -->
+<section id="tools">
+  <h2 style="margin-bottom:0.5rem">Tools Gratis</h2>
+  <p style="color:var(--muted);margin-bottom:2rem;font-size:0.9rem">Semua tools ini tersedia tanpa biaya.</p>
+  <div id="toolDetail"></div>
+  <div class="grid" id="toolGrid">
+    <div class="card" onclick="showDetail('cryptPhone')">
+      <div class="card-icon">📱</div>
+      <h3>Crypt The Phone</h3>
+      <p>Analisa kriptografi smartphone dari model atau nomor seri. Ketahui rating keamanan, konsumsi daya, dan batas kontrol pengguna.</p>
+    </div>
+    <div class="card" onclick="showDetail('hashor')">
+      <div class="card-icon">🔍</div>
+      <h3>Hashor</h3>
+      <p>Bandingkan 2 file atau 2 URL. Hash otomatis ditampilkan — cocok atau tidak. Ada fitur Hash to Text untuk dekode hasil hash.</p>
+    </div>
+    <div class="card" onclick="showDetail('encryptSsstt')">
+      <div class="card-icon">🤫</div>
+      <h3>Encrypt Your Ssstt</h3>
+      <p>Enkripsi Kurva Eliptik per aplikasi. Auto decrypt saat aplikasi dibuka, auto enkripsi kembali 2 detik setelah tidak digunakan.</p>
+    </div>
+    <div class="card rare" onclick="showDetail('iKnowYourSecret')">
+      <div class="card-icon">🤐</div>
+      <h3>I Know Your Secret</h3>
+      <p>Bagikan rahasia hanya ke orang yang kamu tentukan. Orang tertentu bisa dikecualikan secara kriptografis.</p>
+    </div>
+  </div>
+</section>
+
+<!-- PREMIUM -->
+<section id="premium">
+  <h2 style="margin-bottom:0.5rem">Jasa Premium</h2>
+  <p style="color:var(--muted);margin-bottom:2rem;font-size:0.9rem">Pembayaran menggunakan Bitcoin. TXID dikirim ke kontak setelah transfer.</p>
+  <div class="grid">
+    <div class="card paid" onclick="showDetail('genCryptos')">
+      <div class="card-icon">⚙️</div>
+      <h3>Gen Cryptos <span class="tag tag-paid">Rp250.000</span></h3>
+      <p>Generator kriptografi per aplikasi smartphone. Monitor battery, data, Wi-Fi, izin, dan deteksi serangan siber.</p>
+    </div>
+    <div class="card paid" onclick="showDetail('blockchainJasa')">
+      <div class="card-icon">⛓️</div>
+      <h3>Blockchain <span class="tag tag-paid">Rp800.000</span></h3>
+      <p>Implementasi blockchain untuk kebutuhan bisnis, perkantoran, atau penyimpanan data terstruktur.</p>
+    </div>
+    <div class="card paid" onclick="showDetail('cryptanalysis')">
+      <div class="card-icon">🧬</div>
+      <h3>Cryptanalysis <span class="tag tag-paid">Rp10.000.000</span></h3>
+      <p>Audit kriptografi menyeluruh untuk aplikasi atau website. Kalkulasi, jenis, lokasi penggunaan kriptografi, dan rekomendasi.</p>
+    </div>
+  </div>
+</section>
+
+<!-- RARE -->
+<section id="rare">
+  <h2 style="margin-bottom:0.5rem">Rare</h2>
+  <p style="color:var(--muted);margin-bottom:2rem;font-size:0.9rem">Tidak selalu tersedia. Slot terbatas per periode.</p>
+  <div class="grid">
+    <div class="card rare" onclick="showDetail('iAmInYourPhone')">
+      <div class="card-icon">👁️</div>
+      <h3>I Am In Your Phone <span class="tag tag-rare">25 SLOT / 48 JAM</span></h3>
+      <p>Analisa kriptografi real-time dari perangkatmu yang sedang digunakan. Ditampilkan dalam bahasa teknis dan non-teknis.</p>
+    </div>
+  </div>
+</section>
+
+<!-- KONTAK -->
+<section id="kontak">
+  <div class="detail">
+    <h2>Kontak</h2>
+    <p class="sub">Kirim TXID pembayaran atau pertanyaan jasa ke kontak berikut.</p>
+    <div class="contact-info">
+      <div style="margin-bottom:0.75rem">📧 Email: <a href="mailto:alshenfeshiru@zohomail.com">alshenfeshiru@zohomail.com</a></div>
+      <div>🐙 GitHub: <a href="https://github.com/kasen021/keyvault-web" target="_blank">kasen021/keyvault-web</a></div>
+    </div>
+    <div class="warning-box" style="margin-top:1rem">Source code terbuka di GitHub. Jika saya tidak aktif, siapa pun bisa menjalankan server sendiri dari repo yang sama.</div>
+  </div>
+</section>
+
+<!-- DETAIL CARDS (hidden, shown by JS) -->
+<div id="detailOverlay" style="display:none">
+  <button class="back-btn" onclick="closeDetail()">← Kembali</button>
+  <div id="detailContent"></div>
+</div>
+
+</main>
+
+<footer>© 2026 Katoshi Elito Globatos · Key Vault · <a href="https://github.com/kasen021/keyvault-web" style="color:var(--muted)">Open Source</a></footer>
+
+<script>
+const details = {
+  cryptPhone: {
+    icon: '📱', title: 'Crypt The Phone', tag: 'GRATIS', tagClass: 'tag-free',
+    desc: 'Masukkan model, seri, atau nama perangkat smartphone. AI akan menganalisa kriptografi yang digunakan perangkat tersebut dan memberikan penilaian berdasarkan kondisi nyata, bukan spesifikasi pabrik saja.',
+    features: [
+      'Input: nama merk, model, atau nomor seri perangkat',
+      'Output: kriptografi yang digunakan (jenis enkripsi, hashing, protokol)',
+      'Rating keamanan berdasarkan algoritma yang aktif',
+      'Rating konsumsi daya terhadap beban kriptografi',
+      'Rating kontrol pengguna — seberapa banyak yang bisa dikonfigurasi',
+      'Keterangan Not Support untuk perangkat yang sudah tidak beroperasi',
+      'Deskripsi dalam bahasa sehari-hari, bukan analogi',
+    ],
+    note: 'Penilaian berbeda walaupun merk sama, karena penggunaan, umur perangkat, root/non-root, dan custom ROM memengaruhi hasilnya.',
+    price: null
+  },
+  hashor: {
+    icon: '🔍', title: 'Hashor', tag: 'GRATIS', tagClass: 'tag-free',
+    desc: 'Bandingkan dua file atau dua URL. Hash SHA-256 dan RIPEMD-320 dihitung dan dibandingkan. Cocok untuk deteksi file palsu, link phishing, atau perubahan dokumen.',
+    features: [
+      'Input: 2 file (format apapun) atau 2 URL',
+      'Hash SHA-256 dan RIPEMD-320 ditampilkan untuk keduanya',
+      'Hasil: COCOK atau TIDAK COCOK',
+      'Fitur Hash to Text: masukkan hasil hash, dapatkan kembali teksnya',
+      'Tidak menyimpan file atau URL ke server',
+    ],
+    price: null
+  },
+  encryptSsstt: {
+    icon: '🤫', title: 'Encrypt Your Ssstt', tag: 'GRATIS', tagClass: 'tag-free',
+    desc: 'Enkripsi berbasis kondisi aplikasi menggunakan Kurva Eliptik. Aplikasi yang didaftarkan akan otomatis terenkripsi saat tidak digunakan dan terdekripsi saat dibuka kembali.',
+    features: [
+      'Enkripsi Kurva Eliptik per aplikasi yang didaftarkan',
+      'Auto decrypt saat aplikasi dibuka',
+      'Auto enkripsi kembali 2 detik setelah aplikasi tidak digunakan',
+      'Tidak perlu input manual setiap kali',
+      'Kunci tersimpan di perangkat, tidak dikirim ke server',
+    ],
+    price: null
+  },
+  iKnowYourSecret: {
+    icon: '🤐', title: 'I Know Your Secret', tag: 'GRATIS', tagClass: 'tag-free',
+    desc: 'Bagikan informasi sensitif hanya kepada orang-orang tertentu yang kamu tuju. Bisa juga membuat informasi terlihat oleh semua orang kecuali satu orang tertentu.',
+    features: [
+      'Enkripsi informasi dengan daftar penerima yang kamu tentukan',
+      'Penerima yang tidak masuk daftar tidak bisa membukanya',
+      'Bisa dikecualikan: misal semua orang bisa baca kecuali si Fulan',
+      'Berguna untuk: kegiatan harian di internet, keuangan, hal sensitif',
+      'Tidak ada server yang menyimpan isi pesan',
+    ],
+    price: null
+  },
+  genCryptos: {
+    icon: '⚙️', title: 'Gen Cryptos', tag: 'Rp250.000', tagClass: 'tag-paid',
+    desc: 'Generator kriptografi untuk semua aplikasi yang terinstal di smartphone. Setiap aktivitas — mikrofon, kamera, file, lokasi, telepon — dienkripsi dengan ARIA-256-GCM melalui TCP multi-port.',
+    features: [
+      'Full Mode: enkripsi setiap detik, 24 jam penuh — baterai lebih cepat terkuras',
+      'Balance Mode: enkripsi setengah aktivitas — performa dan baterai seimbang',
+      'Save Mode: jeda 20 menit saat tidak digunakan — hemat baterai',
+      'Mini bar monitor: baterai, data seluler, Wi-Fi, izin tiap aplikasi',
+      'Deteksi serangan: DOS, DDOS, XSS, dan lainnya — hanya deteksi, bukan solusi otomatis',
+      'Saat serangan terdeteksi: saran force close semua aplikasi terdaftar selama 30 menit',
+      'Turing Incomplete: semua instruksi dari luar dianggap teks biasa, ditolak',
+      'Penyimpanan compute disk di DNS Google dan Cloudflare, bukan ROM perangkat',
+      'Auto wrangling saat mendekati 2,5 GB dan 10 GB',
+      'Anti-mirror: kunci simetris memastikan salinan tidak bisa dipakai',
+    ],
+    price: 'Rp250.000', btc: '12EDhTKuQY5yarNA3SJHtL9NmRiAEMZwA3'
+  },
+  blockchainJasa: {
+    icon: '⛓️', title: 'Blockchain', tag: 'Rp800.000', tagClass: 'tag-paid',
+    desc: 'Implementasi blockchain Unit N-sac (Superior Age Class) untuk kebutuhan spesifik. 10 class deterministik (0–9), tiap class menyediakan blok minimal 3 MB.',
+    features: [
+      'Unit N-sac: 10 class deterministik, tiap class penyedia blok',
+      'Pilihan kegunaan: metode pembayaran, absensi, tugas harian, laporan keuangan, penyimpanan data besar',
+      'Blockchain tidak bercampur antar nasabah',
+      'Formulir pengisian kebutuhan setelah pembayaran',
+      'Implementasi diberikan dalam bentuk Real Code per bahasa pemrograman',
+      'Source code nasabah dijaga kerahasiaannya',
+      'Alternatif: Real Code Implementation tanpa perlu menyerahkan source code',
+    ],
+    price: 'Rp800.000', btc: '12EDhTKuQY5yarNA3SJHtL9NmRiAEMZwA3'
+  },
+  cryptanalysis: {
+    icon: '🧬', title: 'Cryptanalysis', tag: 'Rp10.000.000', tagClass: 'tag-paid',
+    desc: 'Audit dan modelling kriptografi menyeluruh untuk aplikasi perusahaan atau website besar. Hasilnya bersifat private — tidak dibagikan ke publik.',
+    features: [
+      'Identifikasi semua kriptografi dalam source code',
+      'Kalkulasi penggunaan: kapan, di mana, bagaimana kriptografi dipanggil',
+      'Daftar jenis kriptografi dan lokasinya',
+      'Penilaian: perlu dipangkas atau ditambah lapisan keamanan',
+      'Tidak memerlukan data sensitif (keuangan atau data pribadi pegawai)',
+      'Hasil analisa bersifat private',
+    ],
+    price: 'Rp10.000.000', btc: '12EDhTKuQY5yarNA3SJHtL9NmRiAEMZwA3'
+  },
+  iAmInYourPhone: {
+    icon: '👁️', title: 'I Am In Your Phone', tag: 'RARE · 25 Slot / 48 Jam', tagClass: 'tag-rare',
+    desc: 'Analisa kriptografi real-time dari smartphone yang sedang kamu gunakan. Berbeda dari Crypt The Phone yang berbasis model — ini membaca kondisi aktual perangkatmu saat ini.',
+    features: [
+      'Membaca kriptografi yang aktif sejak smartphone pertama dihidupkan',
+      'Melacak kriptografi yang dipanggil saat setiap aplikasi dibuka',
+      'Menampilkan kapan dan di mana enkripsi/hashing terjadi',
+      'Bukan aktivitasmu yang dilacak — yang dilacak adalah operasi kriptografi sistem',
+      'Hasil dalam bahasa teknis DAN non-teknis',
+      'Tidak ada analogi atau puisi — langsung ke fakta ("saat unduh dokumen, AES-256 dipanggil")',
+      'Berguna untuk: tahu kapan harus ganti HP, pahami batas keamanan perangkatmu',
+    ],
+    slots: 25,
+    note: 'Hanya 25 penggunaan per 48 jam. Sistem terkunci setelah kuota habis. Satu orang cukup sekali — hasilnya bisa di-screenshot.',
+    price: null, rare: true
+  }
+};
+
+function showSection(id, el) {
+  document.querySelectorAll('section').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  document.querySelectorAll('nav a').forEach(a => a.classList.remove('active'));
+  if (el) el.classList.add('active');
+  document.getElementById('detailOverlay').style.display = 'none';
+  window.scrollTo(0, 0);
+}
+
+function showDetail(key) {
+  const d = details[key];
+  if (!d) return;
+  let html = `<div class="detail">
+    <div style="display:flex;align-items:center;gap:0.75rem;margin-bottom:0.5rem">
+      <span style="font-size:2rem">${d.icon}</span>
+      <div>
+        <h2>${d.title}</h2>
+        <span class="tag ${d.tagClass}">${d.tag}</span>
+      </div>
+    </div>
+    <p class="sub">${d.desc}</p>`;
+
+  if (d.rare && d.slots) {
+    html += `<div class="rare-counter"><div class="slots">${d.slots}</div><p>slot tersedia per 48 jam · sistem terkunci otomatis setelah habis</p></div>`;
+  }
+
+  if (d.features) {
+    html += `<div class="detail-section"><h4>Yang kamu dapatkan</h4><ul class="feature-list">`;
+    d.features.forEach(f => { html += `<li>${f}</li>`; });
+    html += `</ul></div>`;
+  }
+
+  if (d.note) {
+    html += `<div class="warning-box" style="margin-top:1rem">ℹ️ ${d.note}</div>`;
+  }
+
+  if (d.price) {
+    html += `<div class="detail-section"><h4>Harga</h4>
+      <div class="price-box"><div class="amount">${d.price}</div><div class="note">Bayar Bitcoin ke alamat berikut. Kirim TXID ke kontak.</div></div>
+      <div class="btc-addr" onclick="copyAddr(this)" title="Klik untuk salin">${d.btc}</div>
+    </div>`;
+  }
+
+  html += `<div class="detail-section" style="margin-top:1.5rem">
+    <a href="#" onclick="showSection('kontak',null);return false;" class="btn btn-primary">Hubungi untuk mulai</a>
+  </div></div>`;
+
+  document.getElementById('detailContent').innerHTML = html;
+  document.getElementById('detailOverlay').style.display = 'block';
+  window.scrollTo(0, 0);
+}
+
+function closeDetail() {
+  document.getElementById('detailOverlay').style.display = 'none';
+}
+
+function copyAddr(el) {
+  navigator.clipboard.writeText(el.textContent.trim()).then(() => {
+    const orig = el.textContent;
+    el.textContent = '✓ Tersalin!';
+    setTimeout(() => { el.textContent = orig; }, 2000);
+  });
+}
+
+document.querySelectorAll('section').forEach(s => {
+  s.prepend(document.getElementById('detailOverlay'));
+});
+</script>
+</body>
+</html>
