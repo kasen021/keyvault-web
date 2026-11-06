@@ -6,7 +6,7 @@ export default async function handler(req, res) {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${process.env.GROQ_API_KEY}` },
     body: JSON.stringify({
-      model: 'qwen/qwen3-8b',
+      model: 'qwen/qwen3.8-27b',
       max_tokens: 4096,
       messages: [
         { role: 'system', content: 'You are a smartphone advisor. Reply with JSON only, no markdown, no thinking tags, no extra text.' },
