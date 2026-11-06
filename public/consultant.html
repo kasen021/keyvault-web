@@ -6,11 +6,10 @@
 <title>Cryptography Consultant — Key Vault</title>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
-:root{--dark:#0a0a0f;--surface:#111118;--card:#16161f;--border:#2a2a3a;--accent:#6c63ff;--text:#e8e8f0;--muted:#7a7a9a;--free:#22c55e;--paid:#6c63ff;--rare:#a855f7;--danger:#ef4444}
+:root{--dark:#0a0a0f;--surface:#111118;--card:#16161f;--border:#2a2a3a;--accent:#6c63ff;--text:#e8e8f0;--muted:#7a7a9a;--free:#22c55e;--paid:#6c63ff;--rare:#a855f7;--danger:#ef4444;--gold:#f59e0b}
 body{background:var(--dark);color:var(--text);font-family:'Segoe UI',system-ui,sans-serif;min-height:100vh}
 .nav{background:var(--surface);border-bottom:1px solid var(--border);padding:.75rem 1.25rem;display:flex;align-items:center;gap:.75rem}
-.nav-logo{font-size:.95rem;font-weight:600}
-.nav-logo span{color:var(--accent)}
+.nav-logo{font-size:.95rem;font-weight:600}.nav-logo span{color:var(--accent)}
 .hero{padding:2rem 1.25rem 1.5rem;max-width:720px;margin:0 auto}
 .hero h1{font-size:1.6rem;font-weight:700;line-height:1.3;margin-bottom:.5rem}
 .hero p{color:var(--muted);font-size:.85rem;line-height:1.7}
@@ -39,8 +38,7 @@ body{background:var(--dark);color:var(--text);font-family:'Segoe UI',system-ui,s
 .tool input,.tool textarea,.tool select{background:#1a1a28;border:1px solid var(--border);border-radius:5px;color:var(--text);padding:.45rem .65rem;font-size:.8rem;width:100%;margin-bottom:.5rem;outline:none}
 .tool input:focus,.tool textarea:focus{border-color:var(--accent)}
 .btn{background:var(--accent);color:#fff;border:none;border-radius:5px;padding:.4rem .85rem;font-size:.78rem;font-weight:600;cursor:pointer;text-decoration:none;display:inline-block}
-.btn:hover{opacity:.85}
-.btn:disabled{opacity:.5;cursor:not-allowed}
+.btn:hover{opacity:.85}.btn:disabled{opacity:.5;cursor:not-allowed}
 .btn-outline{background:transparent;border:1px solid var(--border);color:var(--muted)}
 .btn-rare{background:var(--rare)}
 .btn-dl{background:#22c55e;margin-top:.5rem;display:block;text-align:center;padding:.5rem}
@@ -62,6 +60,12 @@ body{background:var(--dark);color:var(--text);font-family:'Segoe UI',system-ui,s
 .crypto-name{font-weight:600;font-size:.8rem}
 .crypto-type{font-size:.65rem;color:var(--accent);background:#1e1b4b40;border:1px solid #6c63ff20;border-radius:3px;padding:1px 5px;margin-left:5px}
 .crypto-when{font-size:.72rem;color:var(--muted);margin-top:.15rem}
+.fact-item{padding:.35rem 0;border-bottom:1px solid #1e1e2e;font-size:.78rem;color:var(--text);display:flex;gap:.5rem}
+.fact-item:last-child{border:none}
+.fact-dot{color:var(--gold);flex-shrink:0}
+.gaming-box{background:#0d0d15;border:1px solid var(--border);border-radius:6px;padding:.6rem .75rem;margin-top:.5rem}
+.gaming-title{font-size:.72rem;font-weight:600;color:var(--gold);margin-bottom:.35rem}
+.game-tag{display:inline-block;font-size:.68rem;background:#1a1200;border:1px solid #f59e0b30;border-radius:3px;padding:2px 6px;margin:2px 2px 0 0;color:var(--gold)}
 .rare-slots{font-size:.72rem;color:var(--rare);margin-top:.4rem}
 .rare-bar{height:3px;background:#1e1e2e;border-radius:2px;margin-top:.35rem}
 .rare-fill{height:100%;background:var(--rare);border-radius:2px}
@@ -78,27 +82,25 @@ body{background:var(--dark);color:var(--text);font-family:'Segoe UI',system-ui,s
   <div class="nav-logo">Key <span>Vault</span></div>
   <span style="font-size:.72rem;color:var(--muted)">Cryptography Consultant</span>
 </nav>
-
 <div class="hero">
   <h1>Real Digital Security.<br>Not Just a Label.</h1>
   <p>All services use verifiable cryptography. No security claim that cannot be proven.</p>
   <div class="btc-note"><strong>Payment via Bitcoin.</strong> IDR prices auto-converted to BTC via CoinGecko real-time. Lightning Network fee is on you.</div>
 </div>
 
-<!-- FREE -->
 <div class="section">
   <div class="sec-label label-free">Free</div>
 
   <div class="card free">
     <div class="card-head" onclick="toggle('ctp')">
-      <div><div class="card-title">Crypt The Phone</div><div class="card-sub">Device cryptography analysis — free</div></div>
+      <div><div class="card-title">Crypt The Phone</div><div class="card-sub">Device advisor — cryptography, facts & gaming</div></div>
       <div style="display:flex;align-items:center;gap:.4rem"><span class="badge badge-free">Free</span><span class="chev" id="chev-ctp">▼</span></div>
     </div>
     <div class="card-body" id="body-ctp">
-      <p class="desc">Enter your smartphone model, series, or brand — Android, iOS, Solana Seeker, or any device still commercially available. AI analyzes the cryptography used and rates three aspects: Security Rating, Power Consumption, and User Control. End-of-life devices are not supported.</p>
+      <p class="desc">Enter any smartphone model you're considering buying. Get cryptography details, real facts about the device (battery, camera, performance), gaming capability, and security rating — so you know exactly what you're getting before you buy.</p>
       <div class="tool">
         <label>Model / Series / Brand</label>
-        <input type="text" id="ctp-input" placeholder="e.g. Samsung Galaxy S24, iPhone 15 Pro, Pixel 9">
+        <input type="text" id="ctp-input" placeholder="e.g. Redmi Note 14, iPhone 16 Pro, Galaxy S24">
         <button class="btn" onclick="runCTP()">Analyze</button>
       </div>
       <div class="result" id="ctp-result"></div>
@@ -111,7 +113,7 @@ body{background:var(--dark);color:var(--text);font-family:'Segoe UI',system-ui,s
       <div style="display:flex;align-items:center;gap:.4rem"><span class="badge badge-free">Free</span><span class="chev" id="chev-hashor">▼</span></div>
     </div>
     <div class="card-body" id="body-hashor">
-      <p class="desc">Compare 2 texts or URLs to prove whether they are identical — useful for detecting phishing links and fake files. Also identifies hash types from a hash string.</p>
+      <p class="desc">Compare 2 texts or URLs to prove whether they are identical — useful for detecting phishing links and fake files. Also identifies hash types.</p>
       <div class="tool">
         <div style="display:flex;gap:.4rem;margin-bottom:.6rem">
           <button class="btn" id="tab-cmp" onclick="switchTab('compare')">Compare</button>
@@ -140,7 +142,7 @@ body{background:var(--dark);color:var(--text);font-family:'Segoe UI',system-ui,s
       <div style="display:flex;align-items:center;gap:.4rem"><span class="badge badge-free">Free</span><span class="chev" id="chev-eys">▼</span></div>
     </div>
     <div class="card-body" id="body-eys">
-      <p class="desc">Encrypts apps on your smartphone using Elliptic Curve Cryptography. The system remembers the app's condition — Auto Decrypt when opened, re-encrypts 2 seconds after idle. Contact us for initial configuration.</p>
+      <p class="desc">Encrypts apps on your smartphone using Elliptic Curve Cryptography. Auto Decrypt when opened, re-encrypts 2 seconds after idle. Contact us for initial configuration.</p>
       <span class="tag">Elliptic Curve Encryption</span><span class="tag">Auto Decrypt</span><span class="tag">Re-encrypt in 2s</span>
     </div>
   </div>
@@ -159,7 +161,6 @@ body{background:var(--dark);color:var(--text);font-family:'Segoe UI',system-ui,s
 
 <hr class="divider">
 
-<!-- PAID -->
 <div class="section">
   <div class="sec-label label-paid">Paid · Bitcoin</div>
 
@@ -169,7 +170,7 @@ body{background:var(--dark);color:var(--text);font-family:'Segoe UI',system-ui,s
       <div style="display:flex;align-items:center;gap:.4rem"><span class="badge badge-paid">Paid</span><span class="chev" id="chev-nosvpn">▼</span></div>
     </div>
     <div class="card-body" id="body-nosvpn">
-      <p class="desc">Premium decentralized P2P VPN with two tiers. Download the app, pay via Bitcoin to the address below, then contact us with proof of payment for activation.</p>
+      <p class="desc">Premium decentralized P2P VPN. Download app, pay via Bitcoin, contact us with proof of payment for activation.</p>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:.6rem;margin-bottom:.6rem">
         <div class="tool" style="margin-top:0"><div style="font-weight:600;font-size:.82rem;margin-bottom:.3rem">CYBORG</div><div style="font-size:.72rem;color:var(--muted);margin-bottom:.4rem">Rp20,000 · BTC auto-convert</div><div style="font-size:.68rem;color:var(--muted);word-break:break-all">17LPh7ZpPxN4g76kvuFB4fidbvpUAYnXAP</div></div>
         <div class="tool" style="margin-top:0"><div style="font-weight:600;font-size:.82rem;margin-bottom:.3rem">CYPHERSTAR</div><div style="font-size:.72rem;color:var(--muted);margin-bottom:.4rem">Rp50,000 · BTC auto-convert</div><div style="font-size:.68rem;color:var(--muted);word-break:break-all">12EDhTKuQY5yarNA3SJHtL9NmRiAEMZwA3</div></div>
@@ -184,12 +185,12 @@ body{background:var(--dark);color:var(--text);font-family:'Segoe UI',system-ui,s
       <div style="display:flex;align-items:center;gap:.4rem"><span class="badge badge-paid">Paid</span><span class="chev" id="chev-gencryp">▼</span></div>
     </div>
     <div class="card-body" id="body-gencryp">
-      <p class="desc">Cryptography generator for apps on your smartphone. All activities — microphone, camera, files, location, calls — encrypted via ARIA-256-GCM over TCP multi-port, third parties blocked by system. Includes Mini Bar monitoring and cyber attack detection (DOS, DDOS, XSS, etc.).</p>
-      <span class="tag">Full Mode — 24h continuous encryption</span>
-      <span class="tag">Balance Mode — partial encryption</span>
+      <p class="desc">Cryptography generator for all apps on your smartphone. ARIA-256-GCM over TCP multi-port. Includes Mini Bar monitoring and cyber attack detection.</p>
+      <span class="tag">Full Mode — 24h encryption</span>
+      <span class="tag">Balance Mode</span>
       <span class="tag">Save Mode — 20min idle gap</span>
       <span class="tag">Mini Bar monitoring</span>
-      <span class="tag">Attack detection</span>
+      <span class="tag">DOS/DDOS/XSS detection</span>
       <div class="tool" style="margin-top:.6rem">
         <label>Name</label><input type="text" id="gc-name" placeholder="Your name">
         <label>Contact (Telegram / WA)</label><input type="text" id="gc-contact" placeholder="@username or +62xxx">
@@ -206,14 +207,13 @@ body{background:var(--dark);color:var(--text);font-family:'Segoe UI',system-ui,s
       <div style="display:flex;align-items:center;gap:.4rem"><span class="badge badge-paid">Paid</span><span class="chev" id="chev-blockchain">▼</span></div>
     </div>
     <div class="card-body" id="body-blockchain">
-      <p class="desc">Private blockchain implementation for your app or website — suitable for local networks and offices. Uses Unit N-sac (Superior Age Class) system. After payment, you receive Real Code Implementation in your required programming language. Source code sharing is optional.</p>
+      <p class="desc">Private blockchain for your app or website. Unit N-sac system. After payment, receive Real Code Implementation in your required language.</p>
       <span class="tag">Payment method</span><span class="tag">Attendance & tasks</span><span class="tag">Financial reports</span><span class="tag">Large data storage</span>
       <div class="tool" style="margin-top:.6rem">
         <label>Name</label><input type="text" id="bc-name" placeholder="Your name">
         <label>Contact</label><input type="text" id="bc-contact" placeholder="@username or +62xxx">
-        <label>Use Case</label>
-        <select id="bc-usecase"><option value="">Select use case</option><option>Payment method (M-banking, E-wallet, Crypto)</option><option>Activity info (Attendance, Tasks)</option><option>Financial reports</option><option>Large data storage</option></select>
-        <label>Detail</label><textarea id="bc-desc" rows="2" placeholder="Programming language used, requirements detail"></textarea>
+        <select id="bc-usecase" style="background:#1a1a28;border:1px solid var(--border);border-radius:5px;color:var(--text);padding:.45rem .65rem;font-size:.8rem;width:100%;margin-bottom:.5rem"><option value="">Select use case</option><option>Payment method</option><option>Attendance & tasks</option><option>Financial reports</option><option>Large data storage</option></select>
+        <label>Detail</label><textarea id="bc-desc" rows="2" placeholder="Programming language, requirements"></textarea>
         <button class="btn" onclick="sendInquiry('blockchain','bc-name','bc-contact','bc-desc','bc-result')">Send Inquiry</button>
       </div>
       <div class="result" id="bc-result"></div>
@@ -226,11 +226,11 @@ body{background:var(--dark);color:var(--text);font-family:'Segoe UI',system-ui,s
       <div style="display:flex;align-items:center;gap:.4rem"><span class="badge badge-paid">Paid</span><span class="chev" id="chev-cryptan">▼</span></div>
     </div>
     <div class="card-body" id="body-cryptan">
-      <p class="desc">Full cryptography analysis and modelling for large applications or websites. Covers: cryptography map in code, when and where it's used, its calculation, all cryptography types used, and recommendations to trim or add security layers. Done privately — financial data and employee personal data do not need to be shared.</p>
+      <p class="desc">Full cryptography analysis and modelling for large apps or websites. Cryptography map in code, when and where used, all types, recommendations. Done privately.</p>
       <div class="tool">
         <label>Name / Company</label><input type="text" id="ca-name" placeholder="Name or company">
         <label>Contact</label><input type="text" id="ca-contact" placeholder="Telegram / WA / Email">
-        <label>Description</label><textarea id="ca-desc" rows="3" placeholder="App/website description, scale, what you want analyzed"></textarea>
+        <label>Description</label><textarea id="ca-desc" rows="3" placeholder="App/website, scale, what to analyze"></textarea>
         <button class="btn" onclick="sendInquiry('cryptanalysis','ca-name','ca-contact','ca-desc','ca-result')">Send Inquiry</button>
       </div>
       <div class="result" id="ca-result"></div>
@@ -240,7 +240,6 @@ body{background:var(--dark);color:var(--text);font-family:'Segoe UI',system-ui,s
 
 <hr class="divider">
 
-<!-- RARE -->
 <div class="section">
   <div class="sec-label label-rare">Rare · Limited</div>
   <div class="card rare">
@@ -251,10 +250,10 @@ body{background:var(--dark);color:var(--text);font-family:'Segoe UI',system-ui,s
     <div class="card-body" id="body-iayp">
       <div class="rare-slots" id="rare-slots-text">Loading slots...</div>
       <div class="rare-bar"><div class="rare-fill" id="rare-fill" style="width:0%"></div></div>
-      <p class="desc" style="margin-top:.6rem">Unlike Crypt The Phone which analyzes based on model input — this service directly reads the cryptography of the smartphone you are currently using in real-time. Shows what cryptography is active since the phone was turned on, when and where encryption/hashing occurs as you open apps. Explained to the point in both technical and non-technical language. Does not expose personal activity.</p>
-      <p style="font-size:.72rem;color:var(--muted)">Example output: <em>"The cryptography used by this device is Encryption type, named AES-256 — active when you download documents, take photos, install apps."</em></p>
+      <p class="desc" style="margin-top:.6rem">Directly reads cryptography active on your current device in real-time. Shows what cryptography runs since boot, when encryption/hashing fires as you open apps. Technical and non-technical explanation. Does not expose personal activity.</p>
+      <p style="font-size:.72rem;color:var(--muted);margin-bottom:.6rem">Example: <em>"AES-256 — active when you download documents, take photos, install apps."</em></p>
       <div class="tool">
-        <label>User Agent / Device Info (optional, for better accuracy)</label>
+        <label>User Agent / Device Info (optional)</label>
         <input type="text" id="iayp-ua" placeholder="Leave empty to auto-detect">
         <button class="btn btn-rare" onclick="runIAYP()">Analyze Real-time</button>
       </div>
@@ -267,18 +266,8 @@ body{background:var(--dark);color:var(--text);font-family:'Segoe UI',system-ui,s
 
 <script>
 const API='';
-function toggle(id){
-  const b=document.getElementById('body-'+id);
-  const c=document.getElementById('chev-'+id);
-  b.classList.toggle('show');
-  if(c)c.classList.toggle('open',b.classList.contains('show'));
-}
-function switchTab(t){
-  document.getElementById('hashor-compare').style.display=t==='compare'?'block':'none';
-  document.getElementById('hashor-decrypt').style.display=t==='decrypt'?'block':'none';
-  document.getElementById('tab-cmp').className='btn'+(t==='compare'?'':' btn-outline');
-  document.getElementById('tab-dec').className='btn'+(t==='decrypt'?'':' btn-outline');
-}
+function toggle(id){const b=document.getElementById('body-'+id);const c=document.getElementById('chev-'+id);b.classList.toggle('show');if(c)c.classList.toggle('open',b.classList.contains('show'));}
+function switchTab(t){document.getElementById('hashor-compare').style.display=t==='compare'?'block':'none';document.getElementById('hashor-decrypt').style.display=t==='decrypt'?'block':'none';document.getElementById('tab-cmp').className='btn'+(t==='compare'?'':' btn-outline');document.getElementById('tab-dec').className='btn'+(t==='decrypt'?'':' btn-outline');}
 function spin(btn,txt){btn.disabled=true;btn.innerHTML='<span class="spinner"></span>'+txt}
 function unspin(btn,txt){btn.disabled=false;btn.innerHTML=txt}
 function showResult(id,html){const r=document.getElementById(id);r.innerHTML=html;r.classList.add('show')}
@@ -290,51 +279,44 @@ async function runCTP(){
   try{
     const res=await fetch(API+'/api/crypt-the-phone',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({device:input})});
     const d=await res.json();
-    if(!d.supported){showResult('ctp-result',`<div style="color:var(--danger)">${d.device||input}: ${d.reason_unsupported||'Device not supported.'}</div>`);return;}
-    const cl=(d.cryptography||[]).map(c=>`<div class="crypto-item"><div><span class="crypto-name">${c.name}</span><span class="crypto-type">${c.type}</span></div><div class="crypto-when">${c.used_when}</div></div>`).join('');
+    if(!d.supported){showResult('ctp-result',`<div style="color:var(--danger)">${d.device||input}: ${d.reason_unsupported||'Device not supported.'}</div>`);unspin(btn,'Analyze');return;}
     const r=d.rating||{};
+    const sec=parseFloat(r.security)||0;
+    const pow=parseFloat(r.power_consumption)||0;
+    const ctl=parseFloat(r.user_control)||0;
+    const secPct=sec>10?sec:sec*10;
+    const powPct=pow>10?pow:pow*10;
+    const ctlPct=ctl>10?ctl:ctl*10;
+    const cl=(d.cryptography||[]).map(c=>`<div class="crypto-item"><div><span class="crypto-name">${c.name}</span><span class="crypto-type">${c.type}</span></div><div class="crypto-when">${c.used_when}</div></div>`).join('');
+    const facts=(d.facts||[]).map(f=>`<div class="fact-item"><span class="fact-dot">◆</span><span>${f}</span></div>`).join('');
+    const gaming=d.gaming?`<div class="gaming-box"><div class="gaming-title">🎮 Gaming — up to ${d.gaming.max_hours}h sustained</div><div>${(d.gaming.best_games||[]).map(g=>`<span class="game-tag">${g}</span>`).join('')}</div>${d.gaming.note?`<div style="font-size:.7rem;color:var(--muted);margin-top:.4rem">${d.gaming.note}</div>`:''}</div>`:'';
     showResult('ctp-result',`
       <div class="rrow"><span class="rkey">Device</span><span class="rval">${d.device}</span></div>
       <div style="padding:.4rem 0">
-        <div class="rbar-wrap"><div class="rbar-label"><span>Security</span><span>${r.security||0}/100</span></div><div class="rbar"><div class="rfill fill-s" style="width:${r.security||0}%"></div></div><div style="font-size:.68rem;color:var(--muted);margin-top:.15rem">${r.security_note||''}</div></div>
-        <div class="rbar-wrap"><div class="rbar-label"><span>Power Consumption</span><span>${r.power_consumption||0}/100</span></div><div class="rbar"><div class="rfill fill-p" style="width:${r.power_consumption||0}%"></div></div><div style="font-size:.68rem;color:var(--muted);margin-top:.15rem">${r.power_note||''}</div></div>
-        <div class="rbar-wrap"><div class="rbar-label"><span>User Control</span><span>${r.user_control||0}/100</span></div><div class="rbar"><div class="rfill fill-c" style="width:${r.user_control||0}%"></div></div><div style="font-size:.68rem;color:var(--muted);margin-top:.15rem">${r.control_note||''}</div></div>
+        <div class="rbar-wrap"><div class="rbar-label"><span>Security</span><span>${sec}/10</span></div><div class="rbar"><div class="rfill fill-s" style="width:${secPct}%"></div></div><div style="font-size:.68rem;color:var(--muted);margin-top:.15rem">${r.security_note||''}</div></div>
+        <div class="rbar-wrap"><div class="rbar-label"><span>Power</span><span>${pow}/10</span></div><div class="rbar"><div class="rfill fill-p" style="width:${powPct}%"></div></div><div style="font-size:.68rem;color:var(--muted);margin-top:.15rem">${r.power_note||''}</div></div>
+        <div class="rbar-wrap"><div class="rbar-label"><span>User Control</span><span>${ctl}/10</span></div><div class="rbar"><div class="rfill fill-c" style="width:${ctlPct}%"></div></div><div style="font-size:.68rem;color:var(--muted);margin-top:.15rem">${r.control_note||''}</div></div>
       </div>
-      <div style="font-size:.72rem;font-weight:600;color:var(--muted);margin:.4rem 0 .2rem">Cryptography used:</div>
+      ${gaming}
+      <div style="font-size:.72rem;font-weight:600;color:var(--muted);margin:.5rem 0 .25rem">Facts:</div>
+      ${facts}
+      <div style="font-size:.72rem;font-weight:600;color:var(--muted);margin:.5rem 0 .25rem">Cryptography used:</div>
       ${cl}
-      <div style="font-size:.75rem;color:var(--muted);padding-top:.4rem;border-top:1px solid #1e1e2e;margin-top:.2rem">${d.summary||''}</div>`);
+      <div style="font-size:.75rem;color:var(--muted);padding-top:.4rem;border-top:1px solid #1e1e2e;margin-top:.25rem">${d.summary||''}</div>`);
   }catch(e){showResult('ctp-result','<div style="color:var(--danger)">Failed to connect to server.</div>')}
   unspin(btn,'Analyze');
 }
 
 async function runHashor(mode){
-  const btn=event.target;
-  spin(btn,mode==='compare'?'Comparing...':'Identifying...');
+  const btn=event.target;spin(btn,mode==='compare'?'Comparing...':'Identifying...');
   let body={mode};
-  if(mode==='compare'){
-    body.input1=document.getElementById('h-in1').value.trim();
-    body.input2=document.getElementById('h-in2').value.trim();
-    if(!body.input1||!body.input2){unspin(btn,'Compare');return alert('Fill both inputs.');}
-  }else{
-    body.hash_input=document.getElementById('h-hash').value.trim();
-    if(!body.hash_input){unspin(btn,'Identify');return alert('Enter hash.');}
-  }
+  if(mode==='compare'){body.input1=document.getElementById('h-in1').value.trim();body.input2=document.getElementById('h-in2').value.trim();if(!body.input1||!body.input2){unspin(btn,'Compare');return alert('Fill both inputs.');}}
+  else{body.hash_input=document.getElementById('h-hash').value.trim();if(!body.hash_input){unspin(btn,'Identify');return alert('Enter hash.');}}
   try{
     const res=await fetch(API+'/api/hashor',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
     const d=await res.json();
-    if(mode==='compare'){
-      showResult('hashor-result',`
-        <div class="rrow"><span class="rkey">Hash 1</span><span class="rval" style="font-family:monospace;font-size:.68rem">${d.hash1}</span></div>
-        <div class="rrow"><span class="rkey">Hash 2</span><span class="rval" style="font-family:monospace;font-size:.68rem">${d.hash2}</span></div>
-        <div class="rrow"><span class="rkey">Algorithm</span><span class="rval">${d.algorithm}</span></div>
-        <div class="rrow"><span class="rkey">Result</span><span class="rval ${d.match?'match-yes':'match-no'}">${d.match?'✓ MATCH':'✗ NOT MATCH'}</span></div>`);
-    }else{
-      showResult('hashor-result',`
-        <div class="rrow"><span class="rkey">Hash Type</span><span class="rval">${d.hash_type||'-'}</span></div>
-        <div class="rrow"><span class="rkey">Reversible?</span><span class="rval ${d.reversible?'match-yes':'match-no'}">${d.reversible?'Yes':'No'}</span></div>
-        ${d.possible_plaintext?`<div class="rrow"><span class="rkey">Possible text</span><span class="rval">${d.possible_plaintext}</span></div>`:''}
-        <div style="font-size:.72rem;color:var(--muted);margin-top:.4rem">${d.explanation||''}</div>`);
-    }
+    if(mode==='compare'){showResult('hashor-result',`<div class="rrow"><span class="rkey">Hash 1</span><span class="rval" style="font-family:monospace;font-size:.68rem">${d.hash1}</span></div><div class="rrow"><span class="rkey">Hash 2</span><span class="rval" style="font-family:monospace;font-size:.68rem">${d.hash2}</span></div><div class="rrow"><span class="rkey">Algorithm</span><span class="rval">${d.algorithm}</span></div><div class="rrow"><span class="rkey">Result</span><span class="rval ${d.match?'match-yes':'match-no'}">${d.match?'✓ MATCH':'✗ NOT MATCH'}</span></div>`);}
+    else{showResult('hashor-result',`<div class="rrow"><span class="rkey">Hash Type</span><span class="rval">${d.hash_type||'-'}</span></div><div class="rrow"><span class="rkey">Reversible?</span><span class="rval ${d.reversible?'match-yes':'match-no'}">${d.reversible?'Yes':'No'}</span></div>${d.possible_plaintext?`<div class="rrow"><span class="rkey">Possible text</span><span class="rval">${d.possible_plaintext}</span></div>`:''}<div style="font-size:.72rem;color:var(--muted);margin-top:.4rem">${d.explanation||''}</div>`);}
   }catch(e){showResult('hashor-result','<div style="color:var(--danger)">Failed to connect to server.</div>')}
   unspin(btn,mode==='compare'?'Compare':'Identify');
 }
@@ -348,12 +330,7 @@ async function sendInquiry(service,nId,cId,dId,rId){
   try{
     const res=await fetch(API+'/api/inquiry',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({service,name,contact,description})});
     const d=await res.json();
-    showResult(rId,`
-      <div style="color:var(--free);font-weight:600;margin-bottom:.4rem">✓ Inquiry received</div>
-      <div class="rrow"><span class="rkey">Service</span><span class="rval">${d.service}</span></div>
-      <div class="rrow"><span class="rkey">Price</span><span class="rval">${d.price}</span></div>
-      ${d.btc_address?`<div class="rrow"><span class="rkey">BTC Address</span><span class="rval" style="font-family:monospace;font-size:.68rem">${d.btc_address}</span></div>`:''}
-      <div style="font-size:.72rem;color:var(--muted);margin-top:.4rem">${d.note}</div>`);
+    showResult(rId,`<div style="color:var(--free);font-weight:600;margin-bottom:.4rem">✓ Inquiry received</div><div class="rrow"><span class="rkey">Service</span><span class="rval">${d.service}</span></div><div class="rrow"><span class="rkey">Price</span><span class="rval">${d.price}</span></div>${d.btc_address?`<div class="rrow"><span class="rkey">BTC Address</span><span class="rval" style="font-family:monospace;font-size:.68rem">${d.btc_address}</span></div>`:''}<div style="font-size:.72rem;color:var(--muted);margin-top:.4rem">${d.note}</div>`);
   }catch(e){showResult(rId,'<div style="color:var(--danger)">Failed to connect to server.</div>')}
   unspin(btn,'Send Inquiry');
 }
@@ -364,23 +341,17 @@ async function runIAYP(){
   spin(btn,'Analyzing...');
   try{
     await fetch(API+'/api/rare-slots',{method:'POST'});
-    const res=await fetch(API+'/api/crypt-the-phone',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({device:ua,mode:'realtime'})});
+    const res=await fetch(API+'/api/crypt-the-phone',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({device:ua})});
     const d=await res.json();
     const cl=(d.cryptography||[]).map(c=>`<div class="crypto-item"><div><span class="crypto-name">${c.name}</span><span class="crypto-type">${c.type}</span></div><div class="crypto-when">${c.used_when}</div></div>`).join('');
-    showResult('iayp-result',`<div style="font-size:.72rem;font-weight:600;color:var(--rare);margin-bottom:.4rem">Real-time Analysis — ${d.device||'Your Device'}</div>${cl}<div style="font-size:.75rem;color:var(--muted);padding-top:.4rem;border-top:1px solid #1e1e2e;margin-top:.2rem">${d.summary||''}</div>`);
+    showResult('iayp-result',`<div style="font-size:.72rem;font-weight:600;color:var(--rare);margin-bottom:.4rem">Real-time — ${d.device||'Your Device'}</div>${cl}<div style="font-size:.75rem;color:var(--muted);padding-top:.4rem;border-top:1px solid #1e1e2e;margin-top:.2rem">${d.summary||''}</div>`);
     loadSlots();
   }catch(e){showResult('iayp-result','<div style="color:var(--danger)">Failed to connect to server.</div>')}
   unspin(btn,'Analyze Real-time');
 }
 
 async function loadSlots(){
-  try{
-    const res=await fetch(API+'/api/rare-slots');
-    const d=await res.json();
-    const sisa=25-(d.used||0);
-    document.getElementById('rare-slots-text').textContent=`Slots remaining: ${sisa} of 25 · Reset every 48 hours`;
-    document.getElementById('rare-fill').style.width=((d.used||0)/25*100)+'%';
-  }catch{}
+  try{const res=await fetch(API+'/api/rare-slots');const d=await res.json();const sisa=25-(d.used||0);document.getElementById('rare-slots-text').textContent=`Slots remaining: ${sisa} of 25 · Reset every 48 hours`;document.getElementById('rare-fill').style.width=((d.used||0)/25*100)+'%';}catch{}
 }
 loadSlots();
 </script>
