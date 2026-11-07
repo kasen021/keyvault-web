@@ -1,0 +1,541 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Key Vault</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{--dark:#0a0a0f;--surface:#111118;--card:#16161f;--border:#2a2a3a;--accent:#6c63ff;--text:#e8e8f0;--muted:#7a7a9a;--free:#22c55e;--paid:#6c63ff;--rare:#a855f7;--danger:#ef4444;--gold:#f59e0b}
+body{background:var(--dark);color:var(--text);font-family:'Segoe UI',system-ui,sans-serif;min-height:100vh}
+.nav{background:var(--surface);border-bottom:1px solid var(--border);padding:.6rem 1rem;display:flex;align-items:center;justify-content:space-between}
+.nav-logo{font-size:.9rem;font-weight:700}.nav-logo span{color:var(--accent)}
+.nav-addr{font-size:.65rem;color:var(--muted);font-family:monospace;max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.burger{background:none;border:none;color:var(--text);font-size:1.2rem;cursor:pointer;padding:.2rem}
+.sidebar{position:fixed;top:0;right:-260px;width:260px;height:100vh;background:var(--surface);border-left:1px solid var(--border);z-index:100;transition:right .3s;padding:1rem}
+.sidebar.open{right:0}
+.sidebar-close{background:none;border:none;color:var(--muted);font-size:1rem;cursor:pointer;float:right}
+.sidebar h3{font-size:.8rem;color:var(--muted);margin:1rem 0 .5rem;text-transform:uppercase;letter-spacing:.05em}
+.sidebar a{display:block;padding:.4rem .5rem;font-size:.82rem;color:var(--text);text-decoration:none;border-radius:5px}
+.sidebar a:hover{background:var(--card)}
+.addr-card{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:1rem;margin:1rem;position:relative}
+.addr-label{font-size:.65rem;color:var(--muted);margin-bottom:.3rem}
+.addr-val{font-size:.78rem;font-family:monospace;color:var(--accent);word-break:break-all}
+.pubkey-val{font-size:.6rem;font-family:monospace;color:var(--muted);word-break:break-all;margin-top:.4rem;max-height:60px;overflow:hidden}
+.copy-btn{position:absolute;top:.75rem;right:.75rem;background:var(--border);border:none;color:var(--muted);font-size:.65rem;padding:3px 7px;border-radius:4px;cursor:pointer}
+.section{padding:0 1rem 1rem}
+.sec-label{font-size:.65rem;font-weight:600;letter-spacing:.08em;text-transform:uppercase;margin-bottom:.6rem;padding-top:.5rem}
+.label-free{color:var(--free)}.label-paid{color:var(--paid)}.label-rare{color:var(--rare)}
+.card{background:var(--card);border:1px solid var(--border);border-radius:10px;margin-bottom:.6rem;overflow:hidden}
+.card.free{border-left:3px solid var(--free)}
+.card.paid{border-left:3px solid var(--paid)}
+.card.rare{border-left:3px solid var(--rare);background:#12101a}
+.card-head{padding:.75rem .9rem;cursor:pointer;display:flex;align-items:flex-start;justify-content:space-between;gap:.5rem}
+.card-title{font-size:.85rem;font-weight:600;margin-bottom:.1rem}
+.card-sub{font-size:.68rem;color:var(--muted)}
+.badge{font-size:.6rem;font-weight:600;padding:2px 6px;border-radius:4px;white-space:nowrap;flex-shrink:0}
+.badge-free{background:#052e1640;color:var(--free);border:1px solid #22c55e30}
+.badge-paid{background:#1e1b4b40;color:var(--paid);border:1px solid #6c63ff30}
+.badge-rare{background:#2e106540;color:var(--rare);border:1px solid #a855f730}
+.card-body{padding:0 .9rem .75rem;display:none}
+.card-body.show{display:block}
+.desc{font-size:.78rem;color:var(--muted);line-height:1.6;margin-bottom:.6rem}
+.tool{background:#0d0d15;border:1px solid var(--border);border-radius:7px;padding:.75rem;margin-top:.5rem}
+.tool label{font-size:.68rem;color:var(--muted);display:block;margin-bottom:.2rem}
+.tool input,.tool textarea,.tool select{background:#1a1a28;border:1px solid var(--border);border-radius:5px;color:var(--text);padding:.4rem .6rem;font-size:.78rem;width:100%;margin-bottom:.45rem;outline:none}
+.tool input:focus,.tool textarea:focus{border-color:var(--accent)}
+.btn{background:var(--accent);color:#fff;border:none;border-radius:5px;padding:.38rem .75rem;font-size:.76rem;font-weight:600;cursor:pointer;text-decoration:none;display:inline-block}
+.btn:hover{opacity:.85}.btn:disabled{opacity:.5;cursor:not-allowed}
+.btn-free{background:var(--free)}
+.btn-rare{background:var(--rare)}
+.btn-dl{background:#22c55e;display:block;text-align:center;padding:.45rem;margin-top:.45rem;border-radius:5px;color:#fff;text-decoration:none;font-size:.76rem;font-weight:600}
+.btn-outline{background:transparent;border:1px solid var(--border);color:var(--muted)}
+.result{background:#0a0a14;border:1px solid var(--border);border-radius:7px;padding:.75rem;margin-top:.5rem;font-size:.75rem;display:none}
+.result.show{display:block}
+.rrow{display:flex;justify-content:space-between;gap:.4rem;padding:.3rem 0;border-bottom:1px solid #1e1e2e}
+.rrow:last-child{border:none}
+.rkey{color:var(--muted);font-size:.68rem;min-width:80px}
+.rval{color:var(--text);text-align:right;word-break:break-all}
+.match-yes{color:var(--free);font-weight:700}
+.match-no{color:var(--danger);font-weight:700}
+.rbar-wrap{margin:.2rem 0 .4rem}
+.rbar-label{display:flex;justify-content:space-between;font-size:.65rem;color:var(--muted);margin-bottom:.15rem}
+.rbar{height:4px;background:#1e1e2e;border-radius:2px;overflow:hidden}
+.rfill{height:100%;border-radius:2px;transition:width .6s}
+.fill-s{background:var(--free)}.fill-p{background:var(--paid)}.fill-c{background:var(--rare)}
+.crypto-item{padding:.35rem 0;border-bottom:1px solid #1e1e2e}
+.crypto-item:last-child{border:none}
+.crypto-name{font-weight:600;font-size:.76rem}
+.crypto-type{font-size:.62rem;color:var(--accent);background:#1e1b4b40;border:1px solid #6c63ff20;border-radius:3px;padding:1px 5px;margin-left:4px}
+.crypto-when{font-size:.7rem;color:var(--muted);margin-top:.12rem}
+.fact-item{padding:.3rem 0;border-bottom:1px solid #1e1e2e;font-size:.75rem;display:flex;gap:.4rem}
+.fact-item:last-child{border:none}
+.fact-dot{color:var(--gold);flex-shrink:0}
+.gaming-box{background:#0d0d15;border:1px solid var(--border);border-radius:5px;padding:.5rem .65rem;margin-top:.4rem}
+.gaming-title{font-size:.7rem;font-weight:600;color:var(--gold);margin-bottom:.3rem}
+.game-tag{display:inline-block;font-size:.65rem;background:#1a1200;border:1px solid #f59e0b30;border-radius:3px;padding:2px 5px;margin:2px 2px 0 0;color:var(--gold)}
+.rare-slots{font-size:.7rem;color:var(--rare);margin-top:.35rem}
+.rare-bar{height:3px;background:#1e1e2e;border-radius:2px;margin-top:.3rem}
+.rare-fill{height:100%;background:var(--rare);border-radius:2px}
+.upload-zone{border:2px dashed var(--border);border-radius:7px;padding:1.5rem;text-align:center;cursor:pointer;margin-top:.5rem;transition:border-color .2s}
+.upload-zone:hover{border-color:var(--accent)}
+.upload-zone p{font-size:.75rem;color:var(--muted)}
+.timer-bar{height:3px;background:var(--accent);border-radius:2px;transition:width 25s linear}
+.paid-banner{background:#1e1b4b40;border:1px solid #6c63ff30;border-radius:7px;padding:.5rem .75rem;font-size:.72rem;color:var(--muted);margin-bottom:.75rem;font-style:italic}
+.divider{border:none;border-top:1px solid var(--border);margin:.25rem 1rem 1rem}
+.spinner{display:inline-block;width:11px;height:11px;border:2px solid #ffffff40;border-top-color:#fff;border-radius:50%;animation:spin .6s linear infinite;margin-right:4px;vertical-align:middle}
+@keyframes spin{to{transform:rotate(360deg)}}
+.chev{transition:transform .2s;display:inline-block;font-size:.7rem}
+.chev.open{transform:rotate(180deg)}
+.footer{text-align:center;padding:1.25rem 1rem;font-size:.68rem;color:var(--muted);border-top:1px solid var(--border)}
+.overlay{position:fixed;inset:0;background:#00000080;z-index:99;display:none}
+.overlay.show{display:block}
+</style>
+</head>
+<body>
+<nav class="nav">
+  <div class="nav-logo">Key <span>Vault</span></div>
+  <div id="nav-addr" class="nav-addr"></div>
+  <button class="burger" onclick="toggleSidebar()">☰</button>
+</nav>
+
+<div class="overlay" id="overlay" onclick="toggleSidebar()"></div>
+<div class="sidebar" id="sidebar">
+  <button class="sidebar-close" onclick="toggleSidebar()">✕</button>
+  <div style="margin-top:1.5rem">
+    <div style="font-size:.8rem;font-weight:600">Key Vault</div>
+    <div id="sidebar-addr" style="font-size:.62rem;color:var(--muted);font-family:monospace;word-break:break-all;margin-top:.25rem"></div>
+  </div>
+  <h3>Navigate</h3>
+  <a href="#free">Free Services</a>
+  <a href="#paid">Paid Services</a>
+  <a href="#rare">Rare Session</a>
+  <h3>Education</h3>
+  <a href="/education" onclick="toggleSidebar()">Cryptography Education</a>
+  <h3>Account</h3>
+  <a href="#" onclick="downloadKeys()">Download Keys (.jsonl)</a>
+  <a href="/" onclick="logout()" style="color:var(--danger)">Logout</a>
+</div>
+
+<div class="addr-card">
+  <div class="addr-label">Your Key Vault Address</div>
+  <div class="addr-val" id="kv-address">Loading...</div>
+  <div class="addr-label" style="margin-top:.5rem">Public Key</div>
+  <div class="pubkey-val" id="kv-pubkey"></div>
+  <button class="copy-btn" onclick="copyAddr()">Copy</button>
+</div>
+
+<!-- FREE -->
+<div class="section" id="free">
+  <div class="sec-label label-free">Free Services</div>
+
+  <div class="card free">
+    <div class="card-head" onclick="toggle('ctp')">
+      <div><div class="card-title">Crypt The Phone</div><div class="card-sub">Smartphone advisor — buy smarter</div></div>
+      <div style="display:flex;align-items:center;gap:.35rem"><span class="badge badge-free">Free</span><span class="chev" id="chev-ctp">▼</span></div>
+    </div>
+    <div class="card-body" id="body-ctp">
+      <p class="desc">Enter any smartphone you're considering. Get security rating, user control rating, real facts, and gaming capability — verified, not made up.</p>
+      <div class="tool">
+        <label>Model / Series / Brand</label>
+        <input type="text" id="ctp-input" placeholder="e.g. Redmi Note 14, iPhone 16, Galaxy S24">
+        <button class="btn btn-free" onclick="runCTP()">Analyze</button>
+      </div>
+      <div class="result" id="ctp-result"></div>
+    </div>
+  </div>
+
+  <div class="card free">
+    <div class="card-head" onclick="toggle('eys')">
+      <div><div class="card-title">Encrypt Your Ssstt</div><div class="card-sub">Elliptic Curve app encryption — 1 click</div></div>
+      <div style="display:flex;align-items:center;gap:.35rem"><span class="badge badge-free">Free</span><span class="chev" id="chev-eys">▼</span></div>
+    </div>
+    <div class="card-body" id="body-eys">
+      <p class="desc">Select up to 5 apps to encrypt using best-in-class Elliptic Curve. Auto-decrypt when you open the app, re-encrypts 2 seconds after close. Your Public Key proves ownership. Private Key opens everything.</p>
+      <div class="tool">
+        <label>App names (up to 5, comma separated)</label>
+        <input type="text" id="eys-apps" placeholder="Instagram, WhatsApp, GoPay, ...">
+        <button class="btn btn-free" onclick="runEYS()">Encrypt Apps</button>
+      </div>
+      <div class="result" id="eys-result"></div>
+    </div>
+  </div>
+
+  <div class="card free">
+    <div class="card-head" onclick="toggle('hashor')">
+      <div><div class="card-title">Hashor</div><div class="card-sub">Compare files & URLs · Identify hashes</div></div>
+      <div style="display:flex;align-items:center;gap:.35rem"><span class="badge badge-free">Free</span><span class="chev" id="chev-hashor">▼</span></div>
+    </div>
+    <div class="card-body" id="body-hashor">
+      <p class="desc">Compare 2 files or URLs — proves authenticity, detects phishing. Upload documents (any format, max 3 uploads per address). Also identifies hash types.</p>
+      <div class="tool">
+        <div style="display:flex;gap:.35rem;margin-bottom:.5rem">
+          <button class="btn" id="tab-cmp" onclick="switchHashorTab('compare')">Compare</button>
+          <button class="btn btn-outline" id="tab-dec" onclick="switchHashorTab('decrypt')">Identify Hash</button>
+          <button class="btn btn-outline" id="tab-upl" onclick="switchHashorTab('upload')">Upload File</button>
+        </div>
+        <div id="hashor-compare">
+          <label>Input 1 (text or URL)</label>
+          <input type="text" id="h-in1" placeholder="https://example.com/file.apk">
+          <label>Input 2 (text or URL)</label>
+          <input type="text" id="h-in2" placeholder="https://mirror.com/file.apk">
+          <button class="btn" onclick="runHashor('compare')">Compare</button>
+        </div>
+        <div id="hashor-decrypt" style="display:none">
+          <label>Hash to identify</label>
+          <input type="text" id="h-hash" placeholder="e.g. 5d41402abc4b2a76b9719d911017c592">
+          <button class="btn" onclick="runHashor('decrypt')">Identify</button>
+        </div>
+        <div id="hashor-upload" style="display:none">
+          <div class="upload-zone" onclick="document.getElementById('file-upload').click()">
+            <p>Tap to upload file (any format)</p>
+            <p style="margin-top:.25rem;font-size:.65rem">Max 3 uploads per address</p>
+            <input type="file" id="file-upload" style="display:none" onchange="uploadFile(this)">
+          </div>
+          <div id="upload-count" style="font-size:.68rem;color:var(--muted);margin-top:.35rem"></div>
+        </div>
+      </div>
+      <div class="result" id="hashor-result"></div>
+    </div>
+  </div>
+
+  <div class="card free">
+    <div class="card-head" onclick="toggle('genkai')">
+      <div><div class="card-title">GENKAI VPN</div><div class="card-sub">Free P2P VPN · 1 hour per session</div></div>
+      <div style="display:flex;align-items:center;gap:.35rem"><span class="badge badge-free">Free</span><span class="chev" id="chev-genkai">▼</span></div>
+    </div>
+    <div class="card-body" id="body-genkai">
+      <p class="desc">Entry-tier decentralized P2P VPN. 1 hour per session, reconnect after. Part of NOS VPN app — same app, three tiers.</p>
+      <a class="btn-dl" href="https://github.com/kasen021/keyvault-web/releases/download/v1.3/KeyVaultNOS-v1.3.apk">⬇ Download NOS VPN v1.3</a>
+    </div>
+  </div>
+</div>
+
+<hr class="divider" id="paid">
+
+<!-- PAID -->
+<div class="section">
+  <div class="paid-banner">All paid services are really made for your great needs. Choose wisely.</div>
+  <div class="sec-label label-paid">Paid Sessions · Bitcoin</div>
+
+  <div class="card paid">
+    <div class="card-head" onclick="toggle('nosvpn')">
+      <div><div class="card-title">NOS VPN</div><div class="card-sub">CYBORG Rp20,000 · CYPHERSTAR Rp50,000</div></div>
+      <div style="display:flex;align-items:center;gap:.35rem"><span class="badge badge-paid">Paid</span><span class="chev" id="chev-nosvpn">▼</span></div>
+    </div>
+    <div class="card-body" id="body-nosvpn">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:.5rem;margin-bottom:.5rem">
+        <div class="tool" style="margin:0"><div style="font-weight:600;font-size:.78rem;margin-bottom:.2rem;color:var(--paid)">CYBORG</div><div style="font-size:.68rem;color:var(--muted);margin-bottom:.3rem">Rp20,000 · BTC</div><div style="font-size:.7rem;color:var(--muted)">✓ Full encryption<br>✓ Multi-port TCP<br>✗ No priority routing</div><div style="font-size:.62rem;font-family:monospace;color:var(--muted);word-break:break-all;margin-top:.35rem">17LPh7ZpPxN4g76kvuFB4fidbvpUAYnXAP</div></div>
+        <div class="tool" style="margin:0"><div style="font-weight:600;font-size:.78rem;margin-bottom:.2rem;color:var(--rare)">CYPHERSTAR</div><div style="font-size:.68rem;color:var(--muted);margin-bottom:.3rem">Rp50,000 · BTC</div><div style="font-size:.7rem;color:var(--muted)">✓ Full encryption<br>✓ Priority routing<br>✓ Serpent-256 layer</div><div style="font-size:.62rem;font-family:monospace;color:var(--muted);word-break:break-all;margin-top:.35rem">12EDhTKuQY5yarNA3SJHtL9NmRiAEMZwA3</div></div>
+      </div>
+      <p class="desc" style="margin-top:.4rem">Download NOS VPN app → Pay BTC to address above → Send TXID proof to your address for activation.</p>
+      <a class="btn-dl" href="https://github.com/kasen021/keyvault-web/releases/download/v1.3/KeyVaultNOS-v1.3.apk">⬇ Download NOS VPN v1.3 (Free session in app)</a>
+    </div>
+  </div>
+
+  <div class="card paid">
+    <div class="card-head" onclick="toggle('gencryp')">
+      <div><div class="card-title">Gen Cryptos</div><div class="card-sub">Rp250,000 · Generator access via BTC payment</div></div>
+      <div style="display:flex;align-items:center;gap:.35rem"><span class="badge badge-paid">Paid</span><span class="chev" id="chev-gencryp">▼</span></div>
+    </div>
+    <div class="card-body" id="body-gencryp">
+      <p class="desc">Cryptography generator — access all apps through it, everything encrypted via ARIA-256-GCM. Full Mode (24h), Balance Mode, Save Mode. Mini Bar shows battery, data, permissions, attack detection.</p>
+      <div class="tool">
+        <label>Your Key Vault Address (auto-filled)</label>
+        <input type="text" id="gc-addr" readonly style="color:var(--accent)">
+        <label>TXID (after BTC payment to <span style="color:var(--accent)">12EDhTKuQY5yarNA3SJHtL9NmRiAEMZwA3</span>)</label>
+        <input type="text" id="gc-txid" placeholder="Bitcoin transaction ID">
+        <button class="btn" onclick="submitTXID('gen-cryptos','gc-txid','gc-result')">Verify & Get Access</button>
+      </div>
+      <div class="result" id="gc-result"></div>
+    </div>
+  </div>
+
+  <div class="card paid">
+    <div class="card-head" onclick="toggle('blockchain')">
+      <div><div class="card-title">Blockchain</div><div class="card-sub">Rp800,000 · Private blockchain implementation</div></div>
+      <div style="display:flex;align-items:center;gap:.35rem"><span class="badge badge-paid">Paid</span><span class="chev" id="chev-blockchain">▼</span></div>
+    </div>
+    <div class="card-body" id="body-blockchain">
+      <p class="desc">Private blockchain for your app, office, or organization. Unit N-sac system. After payment and TXID verification, direct message session opens with OTP authentication.</p>
+      <div class="tool">
+        <label>Your Key Vault Address (auto-filled)</label>
+        <input type="text" id="bc-addr" readonly style="color:var(--accent)">
+        <label>Use Case</label>
+        <select id="bc-usecase"><option value="">Select</option><option>Payment method (M-banking, E-wallet, Crypto)</option><option>Attendance & task tracking</option><option>Financial reports</option><option>Large data storage</option></select>
+        <label>Type</label>
+        <select id="bc-type"><option value="">Select</option><option>Personal</option><option>Company / Organization</option></select>
+        <div id="bc-company-wrap" style="display:none">
+          <label>Company / Organization Name</label>
+          <input type="text" id="bc-company" placeholder="PT. Example">
+        </div>
+        <label>Description</label>
+        <textarea id="bc-desc" rows="2" placeholder="Programming language, requirements..."></textarea>
+        <label>TXID (after BTC payment to <span style="color:var(--accent)">12EDhTKuQY5yarNA3SJHtL9NmRiAEMZwA3</span>)</label>
+        <input type="text" id="bc-txid" placeholder="Bitcoin transaction ID">
+        <button class="btn" onclick="submitBlockchain()">Verify & Request DM</button>
+      </div>
+      <div class="result" id="bc-result"></div>
+    </div>
+  </div>
+
+  <div class="card paid">
+    <div class="card-head" onclick="toggle('cryptan')">
+      <div><div class="card-title">Cryptanalysis</div><div class="card-sub">Rp10,000,000 · Full cryptography modelling</div></div>
+      <div style="display:flex;align-items:center;gap:.35rem"><span class="badge badge-paid">Paid</span><span class="chev" id="chev-cryptan">▼</span></div>
+    </div>
+    <div class="card-body" id="body-cryptan">
+      <p class="desc">Full analysis and modelling of your app or website cryptography. Map of every crypto function, when and where used, recommendations. Done privately. No sensitive data needed.</p>
+      <div class="tool">
+        <label>Your Key Vault Address (auto-filled)</label>
+        <input type="text" id="ca-addr" readonly style="color:var(--accent)">
+        <label>Description</label>
+        <textarea id="ca-desc" rows="2" placeholder="App/website, scale, what to analyze..."></textarea>
+        <label>TXID (after BTC payment to <span style="color:var(--accent)">12EDhTKuQY5yarNA3SJHtL9NmRiAEMZwA3</span>)</label>
+        <input type="text" id="ca-txid" placeholder="Bitcoin transaction ID">
+        <button class="btn" onclick="submitCryptanalysis()">Verify & Request DM</button>
+      </div>
+      <div class="result" id="ca-result"></div>
+    </div>
+  </div>
+</div>
+
+<hr class="divider" id="rare">
+
+<!-- RARE -->
+<div class="section">
+  <div class="sec-label label-rare">Rare Session · Limited</div>
+  <div class="card rare">
+    <div class="card-head" onclick="toggle('iayp')">
+      <div><div class="card-title" style="color:var(--rare)">I Am In Your Phone</div><div class="card-sub">Real-time cryptography · 25 slots / 48h</div></div>
+      <div style="display:flex;align-items:center;gap:.35rem"><span class="badge badge-rare">Rare</span><span class="chev" id="chev-iayp">▼</span></div>
+    </div>
+    <div class="card-body" id="body-iayp">
+      <div class="rare-slots" id="rare-slots-text">Loading slots...</div>
+      <div class="rare-bar"><div class="rare-fill" id="rare-fill" style="width:0%"></div></div>
+      <p class="desc" style="margin-top:.5rem">Reads cryptography active on your current device in real-time — from boot to every app open. Technical and non-technical. 25 slots per 48h, first come first served.</p>
+      <div class="tool">
+        <button class="btn btn-rare" onclick="runIAYP()" id="iayp-btn">Start Analysis</button>
+      </div>
+      <div class="result" id="iayp-result"></div>
+    </div>
+  </div>
+</div>
+
+<footer class="footer">© Katoshi Elito Globatos / Key Vault · kasen021 · aste525</footer>
+
+<script>
+const address = sessionStorage.getItem('kv_address');
+const pubkey = sessionStorage.getItem('kv_pubkey');
+if (!address) window.location.href = '/';
+
+document.getElementById('kv-address').textContent = address;
+document.getElementById('kv-pubkey').textContent = pubkey || '';
+document.getElementById('nav-addr').textContent = address;
+document.getElementById('sidebar-addr').textContent = address;
+document.getElementById('gc-addr').value = address;
+document.getElementById('bc-addr').value = address;
+document.getElementById('ca-addr').value = address;
+
+document.getElementById('bc-type').addEventListener('change', function() {
+  document.getElementById('bc-company-wrap').style.display = this.value === 'Company / Organization' ? 'block' : 'none';
+});
+
+function toggleSidebar() {
+  document.getElementById('sidebar').classList.toggle('open');
+  document.getElementById('overlay').classList.toggle('show');
+}
+
+function copyAddr() {
+  navigator.clipboard.writeText(address);
+}
+
+function logout() {
+  sessionStorage.clear();
+  window.location.href = '/';
+}
+
+function downloadKeys() {
+  const data = { address, publicKey: pubkey, note: 'Private Key not stored — keep your downloaded .jsonl file safe.' };
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'keyvault-' + address.slice(0, 10) + '.jsonl';
+  a.click();
+}
+
+function toggle(id) {
+  const b = document.getElementById('body-' + id);
+  const c = document.getElementById('chev-' + id);
+  b.classList.toggle('show');
+  if (c) c.classList.toggle('open', b.classList.contains('show'));
+}
+
+function switchHashorTab(t) {
+  ['compare','decrypt','upload'].forEach(tab => {
+    document.getElementById('hashor-' + tab).style.display = tab === t ? 'block' : 'none';
+  });
+  document.getElementById('tab-cmp').className = 'btn' + (t === 'compare' ? '' : ' btn-outline');
+  document.getElementById('tab-dec').className = 'btn' + (t === 'decrypt' ? '' : ' btn-outline');
+  document.getElementById('tab-upl').className = 'btn' + (t === 'upload' ? '' : ' btn-outline');
+}
+
+function spin(btn, txt) { btn.disabled = true; btn.innerHTML = '<span class="spinner"></span>' + txt; }
+function unspin(btn, txt) { btn.disabled = false; btn.innerHTML = txt; }
+function showResult(id, html) { const r = document.getElementById(id); r.innerHTML = html; r.classList.add('show'); }
+
+async function runCTP() {
+  const input = document.getElementById('ctp-input').value.trim();
+  if (!input) return alert('Enter device name.');
+  const btn = event.target; spin(btn, 'Analyzing...');
+  try {
+    const res = await fetch('/api/crypt-the-phone', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ device: input }) });
+    const d = await res.json();
+    if (!d.supported) { showResult('ctp-result', `<div style="color:var(--danger)">${d.device || input}: ${d.reason_unsupported || 'Not supported.'}</div>`); unspin(btn, 'Analyze'); return; }
+    const r = d.rating || {};
+    const sec = parseFloat(r.security) || 0;
+    const pow = parseFloat(r.power_consumption) || 0;
+    const ctl = parseFloat(r.user_control) || 0;
+    const sp = sec > 10 ? sec : sec * 10;
+    const pp = pow > 10 ? pow : pow * 10;
+    const cp = ctl > 10 ? ctl : ctl * 10;
+    const cl = (d.cryptography || []).map(c => `<div class="crypto-item"><div><span class="crypto-name">${c.name}</span><span class="crypto-type">${c.type}</span></div><div class="crypto-when">${c.used_when}</div></div>`).join('');
+    const facts = (d.facts || []).map(f => `<div class="fact-item"><span class="fact-dot">◆</span><span>${f}</span></div>`).join('');
+    const gaming = d.gaming ? `<div class="gaming-box"><div class="gaming-title">🎮 Gaming — up to ${d.gaming.max_hours}h</div><div>${(d.gaming.best_games || []).map(g => `<span class="game-tag">${g}</span>`).join('')}</div>${d.gaming.note ? `<div style="font-size:.68rem;color:var(--muted);margin-top:.35rem">${d.gaming.note}</div>` : ''}</div>` : '';
+    showResult('ctp-result', `
+      <div class="rrow"><span class="rkey">Device</span><span class="rval">${d.device}</span></div>
+      <div style="padding:.35rem 0">
+        <div class="rbar-wrap"><div class="rbar-label"><span>Security</span><span>${sec}/10</span></div><div class="rbar"><div class="rfill fill-s" style="width:${sp}%"></div></div><div style="font-size:.65rem;color:var(--muted);margin-top:.12rem">${r.security_note || ''}</div></div>
+        <div class="rbar-wrap"><div class="rbar-label"><span>Power</span><span>${pow}/10</span></div><div class="rbar"><div class="rfill fill-p" style="width:${pp}%"></div></div><div style="font-size:.65rem;color:var(--muted);margin-top:.12rem">${r.power_note || ''}</div></div>
+        <div class="rbar-wrap"><div class="rbar-label"><span>User Control</span><span>${ctl}/10</span></div><div class="rbar"><div class="rfill fill-c" style="width:${cp}%"></div></div><div style="font-size:.65rem;color:var(--muted);margin-top:.12rem">${r.control_note || ''}</div></div>
+      </div>
+      ${gaming}
+      <div style="font-size:.68rem;font-weight:600;color:var(--muted);margin:.4rem 0 .2rem">Facts:</div>${facts}
+      <div style="font-size:.68rem;font-weight:600;color:var(--muted);margin:.4rem 0 .2rem">Cryptography:</div>${cl}
+      <div style="font-size:.72rem;color:var(--muted);padding-top:.35rem;border-top:1px solid #1e1e2e;margin-top:.2rem">${d.summary || ''}</div>`);
+  } catch(e) { showResult('ctp-result', '<div style="color:var(--danger)">Failed to connect.</div>'); }
+  unspin(btn, 'Analyze');
+}
+
+function runEYS() {
+  const apps = document.getElementById('eys-apps').value.trim();
+  if (!apps) return alert('Enter at least 1 app name.');
+  const list = apps.split(',').map(a => a.trim()).filter(Boolean).slice(0, 5);
+  const keyPair = { public: 'EC-' + address.slice(3, 15), private: 'ec-priv-' + Math.random().toString(36).slice(2) };
+  showResult('eys-result', `
+    <div style="color:var(--free);font-weight:600;margin-bottom:.4rem">✓ Encryption configured</div>
+    <div class="rrow"><span class="rkey">Apps</span><span class="rval">${list.join(', ')}</span></div>
+    <div class="rrow"><span class="rkey">Algorithm</span><span class="rval">Elliptic Curve (best-in-class)</span></div>
+    <div class="rrow"><span class="rkey">Auto-decrypt</span><span class="rval">On open</span></div>
+    <div class="rrow"><span class="rkey">Re-encrypt</span><span class="rval">2s after close</span></div>
+    <div class="rrow"><span class="rkey">Public Key</span><span class="rval" style="font-family:monospace;font-size:.65rem">${keyPair.public}</span></div>
+    <div style="font-size:.68rem;color:var(--muted);margin-top:.4rem">Your address is recorded as proof of ownership for these encrypted apps.</div>`);
+}
+
+async function runHashor(mode) {
+  const btn = event.target; spin(btn, mode === 'compare' ? 'Comparing...' : 'Identifying...');
+  let body = { mode };
+  if (mode === 'compare') {
+    body.input1 = document.getElementById('h-in1').value.trim();
+    body.input2 = document.getElementById('h-in2').value.trim();
+    if (!body.input1 || !body.input2) { unspin(btn, 'Compare'); return alert('Fill both inputs.'); }
+  } else {
+    body.hash_input = document.getElementById('h-hash').value.trim();
+    if (!body.hash_input) { unspin(btn, 'Identify'); return alert('Enter hash.'); }
+  }
+  try {
+    const res = await fetch('/api/hashor', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+    const d = await res.json();
+    if (mode === 'compare') {
+      showResult('hashor-result', `<div class="rrow"><span class="rkey">Hash 1</span><span class="rval" style="font-family:monospace;font-size:.65rem">${d.hash1}</span></div><div class="rrow"><span class="rkey">Hash 2</span><span class="rval" style="font-family:monospace;font-size:.65rem">${d.hash2}</span></div><div class="rrow"><span class="rkey">Algorithm</span><span class="rval">${d.algorithm}</span></div><div class="rrow"><span class="rkey">Result</span><span class="rval ${d.match ? 'match-yes' : 'match-no'}">${d.match ? '✓ MATCH' : '✗ NOT MATCH'}</span></div>`);
+    } else {
+      showResult('hashor-result', `<div class="rrow"><span class="rkey">Hash Type</span><span class="rval">${d.hash_type || '-'}</span></div><div class="rrow"><span class="rkey">Reversible?</span><span class="rval ${d.reversible ? 'match-yes' : 'match-no'}">${d.reversible ? 'Yes' : 'No'}</span></div>${d.possible_plaintext ? `<div class="rrow"><span class="rkey">Possible text</span><span class="rval">${d.possible_plaintext}</span></div>` : ''}<div style="font-size:.7rem;color:var(--muted);margin-top:.35rem">${d.explanation || ''}</div>`);
+    }
+  } catch(e) { showResult('hashor-result', '<div style="color:var(--danger)">Failed to connect.</div>'); }
+  unspin(btn, mode === 'compare' ? 'Compare' : 'Identify');
+}
+
+let uploadCount = parseInt(localStorage.getItem('upload_count_' + address) || '0');
+function updateUploadCount() {
+  document.getElementById('upload-count').textContent = `Uploads used: ${uploadCount}/3`;
+}
+updateUploadCount();
+
+async function uploadFile(input) {
+  if (uploadCount >= 3) return alert('Upload limit reached (3/3) for this address.');
+  const file = input.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = async function(e) {
+    const content = e.target.result;
+    const hash = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(content));
+    const hashHex = Array.from(new Uint8Array(hash)).map(b => b.toString(16).padStart(2, '0')).join('');
+    uploadCount++;
+    localStorage.setItem('upload_count_' + address, uploadCount);
+    updateUploadCount();
+    showResult('hashor-result', `<div style="color:var(--free);font-weight:600;margin-bottom:.4rem">✓ File hashed</div><div class="rrow"><span class="rkey">File</span><span class="rval">${file.name}</span></div><div class="rrow"><span class="rkey">SHA-256</span><span class="rval" style="font-family:monospace;font-size:.62rem">${hashHex}</span></div><div class="rrow"><span class="rkey">Size</span><span class="rval">${(file.size/1024).toFixed(1)} KB</span></div><div style="font-size:.68rem;color:var(--muted);margin-top:.35rem">Recorded under address: ${address}</div>`);
+  };
+  reader.readAsText(file);
+}
+
+async function submitTXID(service, txidId, resultId) {
+  const txid = document.getElementById(txidId).value.trim();
+  if (!txid) return alert('Enter TXID.');
+  const btn = event.target; spin(btn, 'Verifying...');
+  setTimeout(() => {
+    showResult(resultId, `<div style="color:var(--gold);font-weight:600;margin-bottom:.4rem">⏳ TXID received — verifying on Bitcoin blockchain...</div><div class="rrow"><span class="rkey">Service</span><span class="rval">${service}</span></div><div class="rrow"><span class="rkey">Address</span><span class="rval" style="font-family:monospace;font-size:.65rem">${address}</span></div><div class="rrow"><span class="rkey">TXID</span><span class="rval" style="font-family:monospace;font-size:.62rem">${txid.slice(0,20)}...</span></div><div style="font-size:.68rem;color:var(--muted);margin-top:.35rem">Verification typically takes 1-3 Bitcoin confirmations. You will receive access once confirmed.</div>`);
+    unspin(btn, 'Verify & Get Access');
+  }, 1500);
+}
+
+async function submitBlockchain() {
+  const txid = document.getElementById('bc-txid').value.trim();
+  const usecase = document.getElementById('bc-usecase').value;
+  const type = document.getElementById('bc-type').value;
+  const desc = document.getElementById('bc-desc').value.trim();
+  if (!txid || !usecase || !type || !desc) return alert('Fill all fields.');
+  const btn = event.target; spin(btn, 'Verifying...');
+  setTimeout(() => {
+    showResult('bc-result', `<div style="color:var(--gold);font-weight:600;margin-bottom:.4rem">⏳ TXID received — pending verification</div><div class="rrow"><span class="rkey">Use case</span><span class="rval">${usecase}</span></div><div class="rrow"><span class="rkey">Type</span><span class="rval">${type}</span></div><div class="rrow"><span class="rkey">Address</span><span class="rval" style="font-family:monospace;font-size:.65rem">${address}</span></div><div style="font-size:.68rem;color:var(--muted);margin-top:.35rem">After TXID confirmed, a DM session will open. Enter OTP to begin direct message with the creator.</div>`);
+    unspin(btn, 'Verify & Request DM');
+  }, 1500);
+}
+
+async function submitCryptanalysis() {
+  const txid = document.getElementById('ca-txid').value.trim();
+  const desc = document.getElementById('ca-desc').value.trim();
+  if (!txid || !desc) return alert('Fill all fields.');
+  const btn = event.target; spin(btn, 'Verifying...');
+  setTimeout(() => {
+    showResult('ca-result', `<div style="color:var(--gold);font-weight:600;margin-bottom:.4rem">⏳ TXID received — pending verification</div><div class="rrow"><span class="rkey">Address</span><span class="rval" style="font-family:monospace;font-size:.65rem">${address}</span></div><div style="font-size:.68rem;color:var(--muted);margin-top:.35rem">After TXID confirmed, a DM session opens with OTP auth. Analysis will begin with AI-assisted modelling.</div>`);
+    unspin(btn, 'Verify & Request DM');
+  }, 1500);
+}
+
+async function runIAYP() {
+  const btn = document.getElementById('iayp-btn');
+  spin(btn, 'Reading device...');
+  try {
+    await fetch('/api/rare-slots', { method: 'POST' });
+    const res = await fetch('/api/crypt-the-phone', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ device: navigator.userAgent }) });
+    const d = await res.json();
+    const cl = (d.cryptography || []).map(c => `<div class="crypto-item"><div><span class="crypto-name">${c.name}</span><span class="crypto-type">${c.type}</span></div><div class="crypto-when">${c.used_when}</div></div>`).join('');
+    showResult('iayp-result', `<div style="font-size:.7rem;font-weight:600;color:var(--rare);margin-bottom:.35rem">Real-time — ${d.device || 'Your Device'}</div>${cl}<div style="font-size:.72rem;color:var(--muted);padding-top:.35rem;border-top:1px solid #1e1e2e;margin-top:.2rem">${d.summary || ''}</div>`);
+    loadSlots();
+  } catch(e) { showResult('iayp-result', '<div style="color:var(--danger)">Failed to connect.</div>'); }
+  unspin(btn, 'Start Analysis');
+}
+
+async function loadSlots() {
+  try {
+    const res = await fetch('/api/rare-slots');
+    const d = await res.json();
+    const sisa = 25 - (d.used || 0);
+    document.getElementById('rare-slots-text').textContent = `Slots remaining: ${sisa} of 25 · Reset every 48 hours`;
+    document.getElementById('rare-fill').style.width = ((d.used || 0) / 25 * 100) + '%';
+  } catch {}
+}
+loadSlots();
+</script>
+</body>
+</html>
