@@ -568,22 +568,22 @@ function mountDash() {
   body.appendChild(el('div', 'fw-semibold mb-1', 'Pusat Perlindungan: status nyata, diukur langsung'));
   body.appendChild(el('div', 'small-note mb-2', 'Angka di sini diukur dari lalu lintas sungguhan, bukan label. Bila angkanya nol atau statusnya kuning, perlindungan itu belum berjalan di perangkatmu. Tombol ON di website tidak bisa mengubah pengaturan HP; yang bisa dilakukan website adalah mengukur apakah perangkatmu benar-benar memakainya.'));
   const row = el('div', 'row g-2');
-  row.append(cell('mNet', '1. IP dan jaringan'), cell('mDns', '2. DNS aman (Key Vault)'), cell('mCrypto', '3. Kriptografi di perangkat ini'), cell('mApps', '4. Semua aplikasi (sosial media, dll)'));
+  row.append(cell('mNet', '1. IP dan jaringan'), cell('mDns', '2. DNS aman (Key Vault)'), cell('mCrypto', '3. Kriptografi di perangkat ini'), );
   body.appendChild(row);
   $('#cats').before(card);
 }
 async function refreshNet() {
   const again = el('button', 'btn btn-sm btn-outline-light mt-2', 'Cek ulang');
   again.onclick = () => refreshAll();
-  if (!serverOk) { net = null; setCell('mNet', 'Server belum terhubung', 'text-bg-warning', ['IP tidak bisa diukur tanpa server.'], again); renderApps(); return; }
+  if (!serverOk) { net = null; setCell('mNet', 'Server belum terhubung', 'text-bg-warning', ['IP tidak bisa diukur tanpa server.'], again);  return; }
   const r = await api('/api/whoami');
-  if (!r.ok) { net = null; setCell('mNet', 'Gagal mengukur', 'text-bg-warning', [r.data.error || 'Server tidak menjawab.'], again); renderApps(); return; }
+  if (!r.ok) { net = null; setCell('mNet', 'Gagal mengukur', 'text-bg-warning', [r.data.error || 'Server tidak menjawab.'], again);  return; }
   net = r.data;
   const d = net;
   if (!d.ip) setCell('mNet', 'IP tidak dilaporkan', 'text-bg-secondary', ['Server ini tidak bisa melaporkan IP.'], again);
   else if (d.tor === true) setCell('mNet', 'IP tersembunyi: lewat Tor', 'text-bg-success', [`IP yang terlihat situs: ${d.ip} (relay keluar Tor, bukan IP-mu)`, `Server terdekat: ${d.colo || '-'}`], again);
   else setCell('mNet', 'IP asli terlihat', 'text-bg-warning', [`IP yang terlihat situs: ${d.ip}`, `Jaringan: ${d.isp || '-'} (AS${d.asn || '-'}), ${d.negara || '-'}${d.kota ? ', ' + d.kota : ''}`, `Lewat Tor: ${d.tor === null ? 'tidak bisa dicek' : 'tidak'}`, `Server terdekat: ${d.colo || '-'}`], again);
-  renderApps();
+  
 }
 async function refreshDns() {
   if (!vault) return;
@@ -603,16 +603,7 @@ async function refreshDns() {
   else if (d.total > 0) setCell('mDns', 'Pernah dipakai, sepi 5 menit terakhir', 'text-bg-warning', lines);
   else setCell('mDns', 'BELUM DIPAKAI: alamat DNS belum dipasang di perangkat', 'text-bg-warning', lines);
 }
-function renderApps() {
-  const box = el('div', 'mt-1');
-  box.appendChild(linkBtn('Orbot di Google Play', 'https://play.google.com/store/apps/details?id=org.torproject.android'));
-  box.appendChild(linkBtn('Situs resmi Orbot', 'https://orbot.app/en/download/'));
-  if (net && net.tor === true) {
-    setCell('mApps', 'Terlindungi lewat Tor', 'text-bg-success', ['Lalu lintas browser ini keluar lewat jaringan Tor. Cek ini hanya mengukur browser; di Orbot, pastikan aplikasi sosial media juga dipilih (Start VPN, lalu pilih aplikasi).'], box);
-  } else {
-    setCell('mApps', 'Belum ada tunnel di perangkat', 'text-bg-warning', ['Website tidak bisa mengenkripsi lalu lintas aplikasi lain. Yang bisa: pasang Orbot (gratis, resmi dari Tor Project dan Guardian Project), buka Orbot, ketuk Start VPN, lalu pilih aplikasi sosial media yang mau dilindungi. Lalu lintas dipantulkan lewat beberapa relay sukarelawan di seluruh dunia. Setelah aktif, kartu ini berubah hijau (diukur dari IP yang terlihat), dan internet menjadi lebih lambat.'], box);
-  }
-}
+
 function renderCrypto() {
   if (!$('#mCrypto')) return;
   const st = readStats(), layers = cascadeLayers();
@@ -670,7 +661,7 @@ async function runSelfTest() {
 }
 async function refreshAll() { await Promise.all([refreshNet(), refreshDns()]); renderCrypto(); }
 function startDash() {
-  mountDash(); renderCrypto(); renderApps();
+  mountDash(); renderCrypto(); 
   refreshAll();
   if (!dashTimer) dashTimer = setInterval(() => { if (serverOk) refreshAll(); }, 15000);
 }
