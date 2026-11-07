@@ -49,12 +49,7 @@ const CATS = {
       { id: 'schnorr', name: 'Schnorr', ready: true, desc: 'Tanda tangan ringkas dan cepat diperiksa.', ex: 'Menandatangani banyak dokumen sekaligus dengan bukti yang ringan.' }
     ]
   },
-  combo: {
-    title: 'Kombinasi Crypto', icon: '🧩', blurb: 'Pilih satu dari tiap kategori, lalu Key Vault milikmu dirakit otomatis.',
-    effect: 'Efek Mode ON: DNS aman (DoH) pribadi aktif.',
-    items: [{ id: 'combo', name: 'Key Vault Kombinasi', ready: true, desc: 'Gabungan satu enkripsi, satu hashing, satu tanda tangan digital dalam satu alur.', ex: 'Masukkan banyak dokumen kapan saja: dihash, ditandatangani, lalu dienkripsi. Mode ON mengaktifkan DNS terenkripsi untuk berinternet lebih aman.' }]
-  }
-};
+  };
 const sel = { enc: 'x448', hash: 'sha256', sig: 'ed448' };
 
 const K_VAULT = 'kv.vault2', K_LEGACY = 'kv.vault', K_MODES = 'kv.modes', K_SERVERS = 'kv.servers';
@@ -320,8 +315,8 @@ async function api(path, body, auth = false) {
 async function connectLoop() {
   const was = serverOk;
   await connectServer();
-  if (serverOk && !was) { await syncModes(); await loadLedger(); renderDoh(); renderPanel(currentCat); }
-  if (!serverOk && was) { await loadLedger(); renderDoh(); }
+  if (serverOk && !was) { await syncModes(); await loadLedger();  renderPanel(currentCat); }
+  if (!serverOk && was) { await loadLedger();  }
   if (!serverOk && !was) await loadLedger();
   clearTimeout(loopTimer);
   loopTimer = setTimeout(connectLoop, serverOk ? 60000 : 15000);
@@ -343,7 +338,7 @@ async function setMode(algo, on) {
     const r = await api('/api/mode', { addr: vault.addr, algo, on, dohHash: dohHash() }, true);
     if (!r.ok) { panelNote += 'Server belum menerima: ' + (r.data.error || 'gagal') + '. Efek lokal tetap aktif.'; panelNoteOk = false; }
   } else panelNote += 'Server belum terhubung; disinkronkan otomatis saat tersambung.';
-  renderPanel(currentCat); renderDoh();
+  renderPanel(currentCat); 
   refreshDns();
 }
 async function syncModes() {
@@ -369,34 +364,7 @@ async function loadLedger() {
 }
 
 let rot = { n: 0, ms: 0 }, rotTimer = null;
-function renderDoh() {
-  const on = modes.length > 0;
-  $('#dohBox').classList.toggle('d-none', !on);
-  if (!on) { clearInterval(rotTimer); rotTimer = null; return; }
-  $('#dohUrl').textContent = serverOk ? dohUrl() : 'Menunggu koneksi ke server...';
-  const ios = $('#dohIos'); if (ios && serverOk) ios.href = dohProfileUrl();
-  if (rotTimer || !serverOk) return;
-  const sync = async () => { const r = await api('/api/rotation?addr=' + vault.addr); rot = { n: r.data.n, ms: Date.now() + r.data.nextMs }; };
-  sync();
-  rotTimer = setInterval(() => { if (Date.now() >= rot.ms) sync(); }, 2000);
-}
-
-let currentCat = null, busy = 0;
-function el(tag, cls, text) { const e = document.createElement(tag); if (cls) e.className = cls; if (text) e.textContent = text; return e; }
-function status(box, msg, ok = true) { box.className = 'small mt-2 ' + (ok ? 'text-success' : 'text-danger'); box.textContent = msg; }
-function renderCats() {
-  const box = $('#cats'); box.textContent = '';
-  for (const [k, c] of Object.entries(CATS)) {
-    const col = document.createElement('div'); col.className = 'col-6 col-md-3';
-    const card = document.createElement('div');
-    card.className = 'card cat-card bg-dark border-secondary h-100' + (currentCat === k ? ' active' : '');
-    card.innerHTML = '<div class="card-body text-center p-3"><div class="fs-3"></div><div class="fw-semibold small mt-1"></div></div>';
-    card.querySelector('.fs-3').textContent = c.icon;
-    card.querySelector('.fw-semibold').textContent = c.title;
-    card.onclick = () => { currentCat = k; panelNote = ''; renderCats(); renderPanel(k); };
-    col.appendChild(card); box.appendChild(col);
-  }
-}
+function renderDoh() {}
 
 function renderPanel(k) {
   const panel = $('#panel'); panel.textContent = '';
@@ -508,27 +476,7 @@ function renderPanel(k) {
 }
 
 function mountServerBox() { renderServerStatus(); }
-function mountDohHelp() {
-  if ($('#dohHelp')) return;
-  const host = $('#dohBox .card-body'); if (!host) return;
-  const wrap = el('div', 'mt-2'); wrap.id = 'dohHelp';
-  const copy = el('button', 'btn btn-sm btn-success me-2 mb-1', 'Salin alamat DNS');
-  copy.onclick = async () => {
-    if (!serverOk) return;
-    await navigator.clipboard.writeText(dohUrl());
-    copy.textContent = 'Tersalin'; setTimeout(() => { copy.textContent = 'Salin alamat DNS'; }, 2000);
-  };
-  const ios = el('a', 'btn btn-sm btn-outline-light mb-1', 'iPhone/iPad: pasang otomatis'); ios.id = 'dohIos';
-  wrap.append(copy, ios);
-  wrap.appendChild(el('div', 'small-note mt-2', 'Android (Chrome): ketuk Salin alamat DNS, lalu Chrome > titik tiga > Setelan > Privasi dan keamanan > Gunakan DNS aman > Pilih penyedia lain > tempel > simpan. Firefox: Setelan > Privasi dan keamanan > DNS melalui HTTPS > Kustom > tempel. iPhone/iPad: ketuk tombol pasang otomatis, lalu Setelan > Profil Diunduh > Pasang. Pengaturan Private DNS bawaan Android tidak bisa dipakai untuk ini. Setelah dipasang, perlindungan ini terus berjalan walau halaman ini ditutup. Situs tujuan tetap melihat IP-mu.'));
-  host.appendChild(wrap);
-}
-function mountLockButton() {
-  if ($('#btnLock')) return;
-  const b = el('button', 'btn btn-sm btn-outline-warning', 'Kunci Sekarang'); b.id = 'btnLock';
-  b.onclick = () => location.reload();
-  $('#btnBackup').after(b);
-}
+function mountDohHelp() {}
 let idleTimer = null, idleOn = false;
 const IDLE_MS = 10 * 60 * 1000;
 function startIdleLock() {
@@ -643,8 +591,8 @@ function showConsultantSection() {
 async function enter() {
   $('#hero').classList.add('d-none'); $('#main').classList.remove('d-none');
   $('#addr').textContent = vault.addr;
-  mountLockButton(); mountDohHelp();
-  renderCats(); renderDoh();
+  mountLockButton(); 
+  renderCats(); 
   if (!entered) { entered = true; startIdleLock(); window.addEventListener('online', connectLoop); }
   await connectLoop();
   startDash();
