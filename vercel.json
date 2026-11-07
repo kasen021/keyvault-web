@@ -5,7 +5,10 @@
     { "src": "public/**", "use": "@vercel/static" }
   ],
   "routes": [
+    { "src": "/", "dest": "/public/index.html" },
     { "src": "/consultant", "dest": "/public/consultant.html" },
+    { "src": "/vault", "dest": "/public/vault.html" },
+    { "src": "/api/auth", "dest": "/api/auth.js" },
     { "src": "/api/crypt-the-phone", "dest": "/api/crypt-the-phone.js" },
     { "src": "/api/hashor", "dest": "/api/hashor.js" },
     { "src": "/api/inquiry", "dest": "/api/inquiry.js" },
