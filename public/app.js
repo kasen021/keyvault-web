@@ -366,126 +366,8 @@ async function loadLedger() {
 let rot = { n: 0, ms: 0 }, rotTimer = null;
 function renderDoh() {}
 
-function renderPanel(k) {
-  const panel = $('#panel'); panel.textContent = '';
-  if (!k) return;
-  const c = CATS[k];
-  const card = el('div', 'card bg-dark border-secondary');
-  const body = el('div', 'card-body'); card.appendChild(body);
-  body.appendChild(el('div', 'h5', c.title));
-  body.appendChild(el('div', 'small-note mb-1', c.blurb));
-  body.appendChild(el('div', 'small-note mb-3', c.effect));
-
-  for (const it of c.items) {
-    const row = el('div', 'algo-row border border-secondary rounded p-3 mb-2' + (it.ready ? '' : ' off'));
-    const top = el('div', 'd-flex justify-content-between align-items-start gap-2');
-    const left = el('div', 'flex-grow-1');
-    if (k !== 'combo') {
-      const lab = el('label', 'fw-semibold d-flex align-items-center gap-2');
-      const rd = el('input'); rd.type = 'radio'; rd.name = 'sel-' + k; rd.disabled = !it.ready; rd.checked = sel[k] === it.id;
-      rd.onchange = () => { sel[k] = it.id; };
-      lab.appendChild(rd); lab.appendChild(document.createTextNode(it.name));
-      left.appendChild(lab);
-    } else left.appendChild(el('div', 'fw-semibold', it.name));
-    left.appendChild(el('div', 'small mt-1', it.desc));
-    left.appendChild(el('div', 'small-note mt-1', 'Contoh: ' + it.ex));
-    const sw = el('div', 'form-check form-switch');
-    const cb = el('input', 'form-check-input'); cb.type = 'checkbox'; cb.role = 'switch';
-    cb.disabled = !it.ready; cb.checked = modes.includes(it.id);
-    cb.onchange = () => setMode(it.id, cb.checked);
-    sw.appendChild(cb); sw.appendChild(el('label', 'form-check-label small', cb.checked ? 'ON' : 'OFF'));
-    top.appendChild(left); top.appendChild(sw); row.appendChild(top); body.appendChild(row);
-  }
-  body.appendChild(el('div', 'small-note mb-3', `Mode ON aktif: ${modes.length}. Bebas memilih berapa pun.`));
-
-  const out = el('div');
-  if (panelNote) status(out, panelNote, panelNoteOk);
-  const mkFile = (label, multiple = false, accept) => {
-    const w = el('div', 'mb-2'); w.appendChild(el('label', 'form-label small', label));
-    const i = el('input', 'form-control'); i.type = 'file'; i.multiple = multiple; if (accept) i.accept = accept;
-    w.appendChild(i); body.appendChild(w); return i;
-  };
-  const btn = (text, cls, fn) => {
-    const b = el('button', 'btn ' + cls + ' me-2 mb-1', text);
-    b.onclick = async () => { busy++; try { b.disabled = true; await fn(); } catch (e) { status(out, e.message || 'Gagal', false); } finally { busy--; b.disabled = false; } };
-    body.appendChild(b); return b;
-  };
-
-  if (k === 'enc') {
-    const f = mkFile('Pilih file (satu atau beberapa)', true);
-    btn('Enkripsi', 'btn-primary', async () => { for (const x of f.files) await encryptFile(x, sel.enc); status(out, 'Selesai dienkripsi.'); });
-    btn('Dekripsi', 'btn-outline-light', async () => { for (const x of f.files) await decryptFile(x); status(out, 'Selesai didekripsi.'); });
-  }
-  if (k === 'hash') {
-    const a = mkFile('File asli'); const b = mkFile('File yang dibandingkan');
-    btn('Bandingkan', 'btn-primary', async () => {
-      if (!a.files[0] || !b.files[0]) throw new Error('Pilih kedua file');
-      const algos = hashAlgos(); const lines = []; const digests = {};
-      for (const algo of algos) {
-        const [h1, h2] = [await hashFile(a.files[0], algo), await hashFile(b.files[0], algo)];
-        digests[algo] = h1 === h2 ? h1 : null;
-        lines.push(`${algo}: ${h1 === h2 ? 'cocok' : 'BEDA'}`);
-      }
-      if (algos.some((x) => !digests[x])) { status(out, `TIDAK SAMA (dipalsukan atau berbeda). ${lines.join(' | ')}`, false); return; }
-      const notes = [];
-      for (const algo of algos) {
-        if (!serverOk) { notes.push('Ledger: server belum terhubung'); break; }
-        const r = await api('/api/ledger', { file: b.files[0].name, algo, a: digests[algo], b: digests[algo] }, true);
-        if (r.ok) bump('ledger');
-        notes.push(r.ok ? `blok #${r.data.block.index} (${algo})` : `Ledger ${algo}: ${r.data.error || 'gagal'}`);
-      }
-      status(out, `ASLI. ${lines.join(' | ')} | ${notes.join(' | ')}`);
-      loadLedger();
-    });
-  }
-  if (k === 'sig') {
-    const f = mkFile('Dokumen');
-    btn('Tanda Tangani', 'btn-primary', async () => {
-      if (!f.files[0]) throw new Error('Pilih dokumen');
-      const algos = sigAlgos(), ha = hashAlgos()[0];
-      const h = await signFile(f.files[0], algos, ha);
-      status(out, `Ditandatangani dengan ${algos.join(' + ')} (hash ${ha}). Digest: ${h}`);
-    });
-    const s = mkFile('File tanda tangan (.sig.json) untuk verifikasi', false, '.json');
-    btn('Verifikasi', 'btn-outline-light', async () => {
-      if (!f.files[0] || !s.files[0]) throw new Error('Pilih dokumen dan file tanda tangan');
-      const j = JSON.parse(await s.files[0].text());
-      const list = j.sigs || [{ algo: j.algo, pub: j.pub, sig: j.sig }];
-      const h = await hashFile(f.files[0], j.hash || 'sha256');
-      const ok = h === (j.digest || j.sha256) && list.every((x) => verifyHash(x.algo, h, x.pub, x.sig));
-      status(out, ok ? `Tanda tangan sah (${list.map((x) => x.algo).join(' + ')}), alamat penanda tangan: ${j.address}` : 'Tanda tangan TIDAK sah atau dokumen berubah.', ok);
-    });
-  }
-  if (k === 'combo') {
-    for (const [c2, label] of [['enc', 'Enkripsi'], ['hash', 'Hashing'], ['sig', 'Tanda Tangan']]) {
-      const w = el('div', 'mb-2'); w.appendChild(el('label', 'form-label small', label));
-      const s = el('select', 'form-select');
-      for (const it of CATS[c2].items.filter((x) => x.ready)) { const o = el('option', '', it.name); o.value = it.id; o.selected = sel[c2] === it.id; s.appendChild(o); }
-      s.onchange = () => { sel[c2] = s.value; };
-      w.appendChild(s); body.appendChild(w);
-    }
-    const f = mkFile('Dokumen (banyak file)', true);
-    btn('Proses ke Key Vault', 'btn-primary', async () => {
-      const algos = sigAlgos(), ha = hashAlgos()[0];
-      for (const x of f.files) { await signFile(x, algos, ha); await encryptFile(x, sel.enc); }
-      status(out, `Selesai: ${f.files.length} dokumen di-hash (${ha}), ditandatangani (${algos.join(' + ')}), dan dienkripsi (${sel.enc}).`);
-    });
-  }
-  body.appendChild(out);
-  panel.appendChild(card);
-}
-
 function mountServerBox() { renderServerStatus(); }
 function mountDohHelp() {}
-let idleTimer = null, idleOn = false;
-const IDLE_MS = 10 * 60 * 1000;
-function startIdleLock() {
-  if (idleOn) return;
-  idleOn = true;
-  const reset = () => { clearTimeout(idleTimer); idleTimer = setTimeout(() => (busy ? reset() : location.reload()), IDLE_MS); };
-  ['pointerdown', 'keydown', 'touchstart', 'scroll'].forEach((ev) => document.addEventListener(ev, reset, { passive: true }));
-  reset();
-}
 
 // ---------- Pusat Perlindungan: metrik nyata ----------
 const fmtBytes = (n) => (n >= 1048576 ? (n / 1048576).toFixed(1) + ' MB' : n >= 1024 ? (n / 1024).toFixed(1) + ' KB' : n + ' B');
@@ -586,6 +468,66 @@ function showConsultantSection() {
     });
     if (typeof loadSlots === 'function') loadSlots();
   }
+}
+
+
+const CREATOR_ADDRESS = 'qtzdgwfcnsk2x5kdarctvnua4c';
+function isCreator() { return vault && vault.addr === CREATOR_ADDRESS; }
+
+function downloadKeysJsonl() {
+  if (!vault) return;
+  const edPub = hex(ed448.getPublicKey(unhex(vault.ed)));
+  const data = { address: vault.addr, publicKey: edPub, privateKey: vault.ed, createdAt: new Date().toISOString() };
+  const blob = new Blob([JSON.stringify(data, null, 2)], {type: 'application/json'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'keyvault-' + vault.addr.slice(0,10) + '.jsonl';
+  a.click();
+}
+
+function setupCreatorPanel() {
+  if (!isCreator()) return;
+  if (document.getElementById('creatorPanel')) return;
+  const panel = document.createElement('div');
+  panel.id = 'creatorPanel';
+  panel.className = 'card bg-dark mb-3';
+  panel.style.cssText = 'border:1px solid #3fa9f5;border-left:3px solid #f59e0b;max-width:860px;margin:0 auto';
+  panel.innerHTML = [
+    '<div class="card-body">',
+    '<div class="fw-semibold mb-2" style="color:#f59e0b">Creator Panel</div>',
+    '<div id="creatorNotifs" class="mb-2"><div class="small-note">Memuat notifikasi...</div></div>',
+    '<div class="fw-semibold small mb-1" style="color:#a855f7">AI Asisten Cryptanalysis</div>',
+    '<div class="small-note mb-2">Hanya terlihat Creator.</div>',
+    '<div class="input-group input-group-sm mb-2">',
+    '<input type="text" id="cryptanalysisInput" class="form-control bg-dark text-light border-secondary" placeholder="Deskripsikan kriptografi...">',
+    '<button class="btn btn-outline-info" onclick="runCryptanalysisAI()">Analisis</button>',
+    '</div>',
+    '<div id="cryptanalysisResult" class="small"></div>',
+    '</div>'
+  ].join('');
+  const keyBox = document.getElementById('keyInfoBox');
+  if (keyBox) keyBox.after(panel);
+  loadCreatorNotifs();
+}
+
+async function runCryptanalysisAI() {
+  const input = document.getElementById('cryptanalysisInput').value.trim();
+  if (!input) return;
+  const result = document.getElementById('cryptanalysisResult');
+  result.innerHTML = '<span style="color:#a855f7">AI menganalisis...</span>';
+  try {
+    const res = await fetch('/api/crypt-the-phone', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({device: input})});
+    const d = await res.json();
+    result.innerHTML = '<div style="color:#e8e8f0">' + (d.summary || '') + '</div>';
+  } catch(e) { result.innerHTML = '<span style="color:#ef4444">Gagal.</span>'; }
+}
+
+function loadCreatorNotifs() {
+  const box = document.getElementById('creatorNotifs');
+  if (!box) return;
+  const notifs = JSON.parse(localStorage.getItem('creator_notifs') || '[]');
+  if (!notifs.length) { box.innerHTML = '<div class="small-note">Belum ada notifikasi.</div>'; return; }
+  box.innerHTML = notifs.map(function(n) { return '<div class="border border-secondary rounded p-2 mb-1 small"><b>' + n.type + '</b> dari ' + n.from.slice(0,12) + '... ' + n.time + '</div>'; }).join('');
 }
 
 async function enter() {
