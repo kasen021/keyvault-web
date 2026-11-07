@@ -561,110 +561,14 @@ function linkBtn(text, href) {
   a.href = href; a.target = '_blank'; a.rel = 'noopener';
   return a;
 }
-function mountDash() {
-  if ($('#dash')) return;
-  const card = el('div', 'card bg-dark border-info mb-3'); card.id = 'dash';
-  const body = el('div', 'card-body'); card.appendChild(body);
-  body.appendChild(el('div', 'fw-semibold mb-1', 'Pusat Perlindungan: status nyata, diukur langsung'));
-  body.appendChild(el('div', 'small-note mb-2', 'Angka di sini diukur dari lalu lintas sungguhan, bukan label. Bila angkanya nol atau statusnya kuning, perlindungan itu belum berjalan di perangkatmu. Tombol ON di website tidak bisa mengubah pengaturan HP; yang bisa dilakukan website adalah mengukur apakah perangkatmu benar-benar memakainya.'));
-  const row = el('div', 'row g-2');
-  row.append(cell('mNet', '1. IP dan jaringan'), cell('mDns', '2. DNS aman (Key Vault)'), cell('mCrypto', '3. Kriptografi di perangkat ini'), );
-  body.appendChild(row);
-  $('#cats').before(card);
-}
-async function refreshNet() {
-  const again = el('button', 'btn btn-sm btn-outline-light mt-2', 'Cek ulang');
-  again.onclick = () => refreshAll();
-  if (!serverOk) { net = null; setCell('mNet', 'Server belum terhubung', 'text-bg-warning', ['IP tidak bisa diukur tanpa server.'], again);  return; }
-  const r = await api('/api/whoami');
-  if (!r.ok) { net = null; setCell('mNet', 'Gagal mengukur', 'text-bg-warning', [r.data.error || 'Server tidak menjawab.'], again);  return; }
-  net = r.data;
-  const d = net;
-  if (!d.ip) setCell('mNet', 'IP tidak dilaporkan', 'text-bg-secondary', ['Server ini tidak bisa melaporkan IP.'], again);
-  else if (d.tor === true) setCell('mNet', 'IP tersembunyi: lewat Tor', 'text-bg-success', [`IP yang terlihat situs: ${d.ip} (relay keluar Tor, bukan IP-mu)`, `Server terdekat: ${d.colo || '-'}`], again);
-  else setCell('mNet', 'IP asli terlihat', 'text-bg-warning', [`IP yang terlihat situs: ${d.ip}`, `Jaringan: ${d.isp || '-'} (AS${d.asn || '-'}), ${d.negara || '-'}${d.kota ? ', ' + d.kota : ''}`, `Lewat Tor: ${d.tor === null ? 'tidak bisa dicek' : 'tidak'}`, `Server terdekat: ${d.colo || '-'}`], again);
-  
-}
-async function refreshDns() {
-  if (!vault) return;
-  if (!serverOk) { setCell('mDns', 'Server belum terhubung', 'text-bg-warning', ['Hitungan DNS tidak bisa dibaca tanpa server.']); return; }
-  if (!modes.length) { setCell('mDns', 'OFF', 'text-bg-secondary', ['Nyalakan satu Mode ON di bawah untuk membuka DNS aman.']); return; }
-  const r = await api('/api/stats?addr=' + vault.addr, null, true);
-  if (!r.ok || !r.data.tersedia) { setCell('mDns', 'Metrik tidak tersedia', 'text-bg-secondary', [r.data.error || 'Server ini tidak menyimpan hitungan DNS.']); return; }
-  const d = r.data;
-  const lines = [
-    `Permintaan DNS 24 jam terakhir: ${d.q24} (total ${d.total}, gagal diteruskan ${d.fails})`,
-    `Permintaan terakhir: ${d.ago === null ? 'belum ada' : d.ago + ' detik lalu'}`,
-    `Sebaran 10 resolver (acak per permintaan): ${d.up.join(' / ')}`,
-    `Grafik 24 jam: ${spark(d.series)}`,
-    'Dihitung dari semua perangkat yang memakai alamat DNS-mu. Server hanya menghitung jumlah, tanpa nama situs dan tanpa IP.'
-  ];
-  if (d.ago !== null && d.ago < 300) setCell('mDns', 'AKTIF: perangkat memakai DNS ini', 'text-bg-success', lines);
-  else if (d.total > 0) setCell('mDns', 'Pernah dipakai, sepi 5 menit terakhir', 'text-bg-warning', lines);
-  else setCell('mDns', 'BELUM DIPAKAI: alamat DNS belum dipasang di perangkat', 'text-bg-warning', lines);
-}
+function mountDash() {}
 
-function renderCrypto() {
-  if (!$('#mCrypto')) return;
-  const st = readStats(), layers = cascadeLayers();
-  const names = { serpent256: 'Serpent-256', aria256gcm: 'ARIA-256-GCM', cast256: 'CAST-256' };
-  const lines = [
-    `Private key: terenkripsi ${1 + layers.length} lapisan (AES-256-GCM${layers.map((l) => ' + ' + names[l]).join('')}), dikunci kata sandi dengan PBKDF2 600.000 iterasi.`,
-    `Diproses di halaman ini: enkripsi ${st.enc || 0} file (${fmtBytes(st.bytes || 0)}), dekripsi ${st.dec || 0}, hash ${st.hash || 0}, tanda tangan ${st.sign || 0}, ledger ${st.ledger || 0}.`,
-    `Operasi terakhir: ${st.last ? new Date(st.last).toLocaleString('id-ID') : 'belum ada'}.`,
-    'Enkripsi file dan tanda tangan hanya berjalan saat halaman ini terbuka dan hanya untuk file yang kamu pilih di sini.',
-    ...selfTestLines
-  ];
-  const b = el('button', 'btn btn-sm btn-outline-light mt-2', 'Uji mandiri sekarang');
-  b.onclick = async () => { b.disabled = true; b.textContent = 'Menguji...'; await runSelfTest(); };
-  setCell('mCrypto', 'Aktif di halaman ini', 'text-bg-success', lines, b);
-}
-async function runSelfTest() {
-  const out = [];
-  const t = async (name, fn) => {
-    const t0 = performance.now();
-    try { out.push(`${(await fn()) ? 'LULUS' : 'GAGAL'}: ${name} (${Math.round(performance.now() - t0)} ms)`); } catch (e) { out.push(`GAGAL: ${name} (${e.message})`); }
-  };
-  const kb = (n) => Uint8Array.from({ length: n }, (_, i) => i);
-  const blk = (name, key, pt) => { const o = new Uint8Array(16); makeCipher(name, key).encryptBlock(pt, o); return hex(o); };
-  await t('Serpent-256 vektor uji', () => blk('serpent256', kb(32), kb(16)) === 'de269ff833e432b85b2e88d2701ce75c');
-  await t('CAST-256 vektor uji RFC 2612', () => blk('cast256', unhex('2342bb9efa38542cbed0ac83940ac2988d7c47ce264908461cc1b5137ae6b604'), new Uint8Array(16)) === '4f6a2038286897b9c9870136553317fa');
-  await t('ARIA-256 pembanding OpenSSL', () => blk('aria256gcm', kb(32), kb(16)) === '7a859561ff6f42df04a242bfea4fe9dc');
-  await t('ARIA-256-GCM pembanding OpenSSL', () => hex(new GCM(makeCipher('aria256gcm', kb(32))).seal(Uint8Array.from({ length: 12 }, (_, i) => 100 + i), enc.encode('kv-aad'), enc.encode('uji mandiri key vault'))) === 'd48717141a0baa6e1500c75bef3d61ed17118e7c4c342a2a15f854b7ac3612bf44b7274087');
-  await t('RIPEMD-320 vektor uji', () => hex(new RIPEMD320().update(enc.encode('abc')).digest()) === 'de4c01b3054f8930a79d09ae738e92301e5a17085beffdc1b8d116713e74f82fa942d64cdbc4682d');
-  await t('AES-256-GCM menolak data yang diubah', async () => {
-    const k = await crypto.subtle.generateKey({ name: 'AES-GCM', length: 256 }, false, ['encrypt', 'decrypt']);
-    const iv = crypto.getRandomValues(new Uint8Array(12));
-    const ct = new Uint8Array(await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, k, enc.encode('uji')));
-    ct[0] ^= 1;
-    try { await crypto.subtle.decrypt({ name: 'AES-GCM', iv }, k, ct); return false; } catch { return true; }
-  });
-  await t('X448: dua pihak menurunkan kunci bersama yang sama', () => {
-    const a = x448.utils.randomPrivateKey(), b = x448.utils.randomPrivateKey();
-    return hex(x448.getSharedSecret(a, x448.getPublicKey(b))) === hex(x448.getSharedSecret(b, x448.getPublicKey(a)));
-  });
-  await t('Ed448, ECDSA, Schnorr: sah diterima, palsu ditolak', () => {
-    const m = sha256(enc.encode('uji')), bad = sha256(enc.encode('palsu'));
-    const e = ed448.utils.randomPrivateKey(), sp = secp256k1.utils.randomPrivateKey();
-    const s1 = ed448.sign(m, e), s2 = secp256k1.sign(m, sp), s3 = schnorr.sign(m, sp);
-    return ed448.verify(s1, m, ed448.getPublicKey(e)) && !ed448.verify(s1, bad, ed448.getPublicKey(e)) && secp256k1.verify(s2, m, secp256k1.getPublicKey(sp)) && !secp256k1.verify(s2, bad, secp256k1.getPublicKey(sp)) && schnorr.verify(s3, m, schnorr.getPublicKey(sp)) && !schnorr.verify(s3, bad, schnorr.getPublicKey(sp));
-  });
-  await t('Vault 4 lapisan: terbuka dengan kunci benar, ditolak dengan kunci salah', async () => {
-    const salt = crypto.getRandomValues(new Uint8Array(16));
-    const m1 = await deriveMaster('uji-mandiri-1', salt, 1000), m2 = await deriveMaster('uji-mandiri-2', salt, 1000);
-    const st = await sealVault({ rahasia: 'ok' }, m1, { v: 2, addr: 'x', salt: hex(salt), iter: 1000, layers: ['serpent256', 'aria256gcm', 'cast256'] });
-    const back = await openVault(st, m1);
-    try { await openVault(st, m2); return false; } catch { return back.rahasia === 'ok'; }
-  });
-  selfTestLines = out;
-  renderCrypto();
-}
-async function refreshAll() { await Promise.all([refreshNet(), refreshDns()]); renderCrypto(); }
-function startDash() {
-  mountDash(); renderCrypto(); 
-  refreshAll();
-  if (!dashTimer) dashTimer = setInterval(() => { if (serverOk) refreshAll(); }, 15000);
-}
+
+
+
+
+
+function startDash() { showKeyInfo(); }
 
 const DOCS = {
   privacy: ['Kebijakan Privasi', 'Key Vault tidak meminta email atau nomor telepon. Kunci dan dokumen diproses di browser kamu dan tidak diunggah. Private key disimpan terenkripsi dengan kata sandi milikmu. Server tidak mencatat alamat IP, tidak meneruskan IP ke DNS upstream, dan hanya menyimpan: alamat anonim, daftar mode ON, hash token DNS, jumlah permintaan DNS per jam (hanya angka, tanpa nama situs dan tanpa IP), dan blok ledger (nama file, hash yang dibandingkan, hasil, alamat penanda tangan). IP-mu hanya ditampilkan kepadamu saat kamu menekan Cek ulang di Pusat Perlindungan dan tidak disimpan. Kata sandi dan cadangan kunci adalah tanggung jawab kamu: yang hilang tidak bisa dipulihkan siapa pun.'],
@@ -679,6 +583,63 @@ document.querySelectorAll('[data-doc]').forEach((a) => a.addEventListener('click
 }));
 
 let entered = false;
+
+function showKeyInfo() {
+  const existing = document.getElementById('keyInfoBox');
+  if (existing) return;
+  const box = document.createElement('div');
+  box.id = 'keyInfoBox';
+  box.className = 'card bg-dark border-secondary mb-3';
+  box.style.cssText = 'border-left: 3px solid #3fa9f5';
+  
+  const edPub = hex(ed448.getPublicKey(unhex(vault.ed)));
+  const privKey = vault.ed;
+  
+  box.innerHTML = `
+    <div class="card-body">
+      <div class="fw-semibold mb-2">🔑 Keys & Identity</div>
+      <div class="small-note mb-1">Public Key (Ed448 / Goldilocks)</div>
+      <div class="addr small mb-2" style="font-size:.7rem;background:#0b1626;padding:.4rem;border-radius:4px">${edPub}</div>
+      <div class="small-note mb-1">Private Key</div>
+      <div class="addr small mb-2" style="font-size:.7rem;background:#0b1626;padding:.4rem;border-radius:4px;color:#ef4444">${privKey}</div>
+      <div class="d-flex gap-2 flex-wrap">
+        <button class="btn btn-sm btn-outline-light" onclick="navigator.clipboard.writeText('${edPub}')">Salin Public Key</button>
+        <button class="btn btn-sm btn-outline-warning" onclick="navigator.clipboard.writeText('${privKey}')">Salin Private Key</button>
+        <button class="btn btn-sm btn-primary" onclick="generateMagicLink()">✨ Generate Magic Link</button>
+      </div>
+      <div id="magicLinkResult" class="mt-2 small"></div>
+    </div>
+  `;
+  
+  const addrCard = document.getElementById("addr").closest(".card");
+  if (addrCard) addrCard.after(box);
+  
+  showConsultantSection();
+}
+
+function generateMagicLink() {
+  const edPub = hex(ed448.getPublicKey(unhex(vault.ed)));
+  const timestamp = Date.now();
+  const magicData = btoa(JSON.stringify({ addr: vault.addr, pub: edPub, ts: timestamp }));
+  const magicLink = location.origin + '/vault?magic=' + magicData;
+  const result = document.getElementById('magicLinkResult');
+  result.innerHTML = `<div style="word-break:break-all;font-family:monospace;font-size:.65rem;background:#0b1626;padding:.4rem;border-radius:4px;color:#22c55e">${magicLink}</div><div class="small-note mt-1">Magic Link hanya bisa dibuka dengan Private Key kamu.</div>`;
+}
+
+function showConsultantSection() {
+  const s = document.getElementById('consultantSection');
+  if (s) {
+    s.classList.remove('d-none');
+    const addr = vault ? vault.addr : '';
+    window._kvAddr = addr;
+    ['gc-addr','bc-addr','ca-addr'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.value = addr;
+    });
+    if (typeof loadSlots === 'function') loadSlots();
+  }
+}
+
 async function enter() {
   $('#hero').classList.add('d-none'); $('#main').classList.remove('d-none');
   $('#addr').textContent = vault.addr;
