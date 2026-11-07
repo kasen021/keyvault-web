@@ -507,29 +507,7 @@ function renderPanel(k) {
   panel.appendChild(card);
 }
 
-function mountServerBox() {
-  if ($('#srvBox')) return;
-  const box = el('div', 'card bg-dark border-secondary mt-3'); box.id = 'srvBox';
-  const body = el('div', 'card-body'); box.appendChild(body);
-  body.appendChild(el('div', 'fw-semibold mb-1', 'Server global (ledger dan DNS aman)'));
-  const st = el('div', 'small mb-2'); st.id = 'srvStat'; body.appendChild(st);
-  const lst = el('div', 'small-note mb-2'); lst.id = 'srvList'; body.appendChild(lst);
-  const row = el('div', 'input-group');
-  const inp = el('input', 'form-control'); inp.id = 'srvUrl'; inp.placeholder = 'https://server-lain.workers.dev';
-  const add = el('button', 'btn btn-outline-light', 'Tambah');
-  const rst = el('button', 'btn btn-outline-secondary', 'Reset');
-  add.onclick = async () => {
-    const v = inp.value.trim().replace(/\/+$/, '');
-    if (!/^https:\/\/\S+$/.test(v) && !/^http:\/\/localhost(:\d+)?$/.test(v)) { st.textContent = 'Alamat server harus diawali https://'; return; }
-    const l = userServers(); if (!l.includes(v)) l.push(v);
-    localStorage.setItem(K_SERVERS, JSON.stringify(l)); inp.value = '';
-    await connectLoop();
-  };
-  rst.onclick = async () => { localStorage.removeItem(K_SERVERS); await connectLoop(); };
-  row.append(inp, add, rst); body.appendChild(row);
-  body.appendChild(el('div', 'small-note mt-2', 'Aplikasi otomatis memilih server tercepat dan berpindah sendiri bila satu server mati. Server hanya menerima alamat anonim dan blok ledger; semua permintaan data pribadi ditandatangani dengan kunci milikmu.'));
-  $('#dohBox').before(box);
-}
+function mountServerBox() { renderServerStatus(); }
 function mountDohHelp() {
   if ($('#dohHelp')) return;
   const host = $('#dohBox .card-body'); if (!host) return;
@@ -713,7 +691,7 @@ let entered = false;
 async function enter() {
   $('#hero').classList.add('d-none'); $('#main').classList.remove('d-none');
   $('#addr').textContent = vault.addr;
-  mountServerBox(); mountLockButton(); mountDohHelp();
+  mountLockButton(); mountDohHelp();
   renderCats(); renderDoh();
   if (!entered) { entered = true; startIdleLock(); window.addEventListener('online', connectLoop); }
   await connectLoop();

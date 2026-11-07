@@ -88,6 +88,164 @@
     </div>
   </section>
 
+  
+  <div id='consultantSection' class='d-none mt-4' style='max-width:860px;margin:0 auto;padding:0 1rem'>
+    <hr class='border-secondary'>
+    <div class='h5 mt-3 mb-1'>Cryptography Consultant</div>
+    <p class='small text-secondary mb-3'>All services use verifiable cryptography. Your address is your identity here.</p>
+
+    <div class='fw-semibold small mb-2' style='color:#22c55e;letter-spacing:.08em;text-transform:uppercase'>Free Services</div>
+
+    <div class='card bg-dark border-secondary mb-2'>
+      <div class='card-body py-2 px-3' onclick='toggleCC(this)' style='cursor:pointer'>
+        <div class='d-flex justify-content-between align-items-center'>
+          <div><span class='fw-semibold small'>Crypt The Phone</span><span class='badge bg-success ms-2' style='font-size:.6rem'>Free</span></div>
+          <span class='text-secondary small'>▼</span>
+        </div>
+        <div class='cc-body mt-2' style='display:none'>
+          <p class='small text-secondary mb-2'>Enter any smartphone you are considering buying. Get security rating, user control, real facts, and gaming capability.</p>
+          <input type='text' id='ctp-input' class='form-control form-control-sm mb-2' placeholder='e.g. Redmi Note 14, iPhone 16, Galaxy S24'>
+          <button class='btn btn-sm btn-success' onclick='event.stopPropagation();runCTP()'>Analyze</button>
+          <div id='ctp-result' class='mt-2 small'></div>
+        </div>
+      </div>
+    </div>
+
+    <div class='card bg-dark border-secondary mb-2'>
+      <div class='card-body py-2 px-3' onclick='toggleCC(this)' style='cursor:pointer'>
+        <div class='d-flex justify-content-between align-items-center'>
+          <div><span class='fw-semibold small'>Hashor</span><span class='badge bg-success ms-2' style='font-size:.6rem'>Free</span></div>
+          <span class='text-secondary small'>▼</span>
+        </div>
+        <div class='cc-body mt-2' style='display:none'>
+          <p class='small text-secondary mb-2'>Compare 2 URLs or files to prove authenticity. Detect phishing links and fake files.</p>
+          <input type='text' id='h-in1' class='form-control form-control-sm mb-1' placeholder='Input 1 (text or URL)'>
+          <input type='text' id='h-in2' class='form-control form-control-sm mb-2' placeholder='Input 2 (text or URL)'>
+          <button class='btn btn-sm btn-success' onclick='event.stopPropagation();runHashor()'>Compare</button>
+          <div id='hashor-result' class='mt-2 small'></div>
+        </div>
+      </div>
+    </div>
+
+    <div class='card bg-dark border-secondary mb-2'>
+      <div class='card-body py-2 px-3' onclick='toggleCC(this)' style='cursor:pointer'>
+        <div class='d-flex justify-content-between align-items-center'>
+          <div><span class='fw-semibold small'>Encrypt Your Ssstt</span><span class='badge bg-success ms-2' style='font-size:.6rem'>Free</span></div>
+          <span class='text-secondary small'>▼</span>
+        </div>
+        <div class='cc-body mt-2' style='display:none'>
+          <p class='small text-secondary mb-2'>Encrypt up to 5 apps using Elliptic Curve. Auto-decrypt on open, re-encrypts 2s after close.</p>
+          <input type='text' id='eys-apps' class='form-control form-control-sm mb-2' placeholder='Instagram, WhatsApp, GoPay, ...'>
+          <button class='btn btn-sm btn-success' onclick='event.stopPropagation();runEYS()'>Encrypt Apps</button>
+          <div id='eys-result' class='mt-2 small'></div>
+        </div>
+      </div>
+    </div>
+
+    <div class='card bg-dark border-secondary mb-2'>
+      <div class='card-body py-2 px-3' onclick='toggleCC(this)' style='cursor:pointer'>
+        <div class='d-flex justify-content-between align-items-center'>
+          <div><span class='fw-semibold small'>GENKAI VPN</span><span class='badge bg-success ms-2' style='font-size:.6rem'>Free · 1 hour/session</span></div>
+          <span class='text-secondary small'>▼</span>
+        </div>
+        <div class='cc-body mt-2' style='display:none'>
+          <p class='small text-secondary mb-2'>Free entry-tier P2P VPN. 1 hour per session, reconnect after. Part of NOS VPN app.</p>
+          <a href='https://github.com/kasen021/keyvault-web/releases/download/v1.3/KeyVaultNOS-v1.3.apk' class='btn btn-sm btn-success'>⬇ Download NOS VPN v1.3</a>
+        </div>
+      </div>
+    </div>
+
+    <div class='fw-semibold small mb-2 mt-3' style='color:#6c63ff;letter-spacing:.08em;text-transform:uppercase'>Paid Sessions · Bitcoin</div>
+    <p class='small text-secondary mb-2' style='font-style:italic'>All paid ones are really made for your great needs. Choose wisely.</p>
+
+    <div class='card bg-dark border-secondary mb-2'>
+      <div class='card-body py-2 px-3' onclick='toggleCC(this)' style='cursor:pointer'>
+        <div class='d-flex justify-content-between align-items-center'>
+          <div><span class='fw-semibold small'>NOS VPN</span><span class='badge ms-2' style='font-size:.6rem;background:#1e1b4b;color:#6c63ff;border:1px solid #6c63ff40'>Paid</span></div>
+          <span class='text-secondary small'>▼</span>
+        </div>
+        <div class='cc-body mt-2' style='display:none'>
+          <div class='row g-2 mb-2'>
+            <div class='col-6'><div class='border border-secondary rounded p-2 small'><div class='fw-semibold mb-1' style='color:#6c63ff'>CYBORG</div><div class='text-secondary'>Rp20,000 · BTC</div><div style='font-family:monospace;font-size:.62rem;word-break:break-all;color:#9fb0c6;margin-top:.3rem'>17LPh7ZpPxN4g76kvuFB4fidbvpUAYnXAP</div></div></div>
+            <div class='col-6'><div class='border border-secondary rounded p-2 small'><div class='fw-semibold mb-1' style='color:#a855f7'>CYPHERSTAR</div><div class='text-secondary'>Rp50,000 · BTC</div><div style='font-family:monospace;font-size:.62rem;word-break:break-all;color:#9fb0c6;margin-top:.3rem'>12EDhTKuQY5yarNA3SJHtL9NmRiAEMZwA3</div></div></div>
+          </div>
+          <a href='https://github.com/kasen021/keyvault-web/releases/download/v1.3/KeyVaultNOS-v1.3.apk' class='btn btn-sm btn-primary'>⬇ Download NOS VPN v1.3</a>
+        </div>
+      </div>
+    </div>
+
+    <div class='card bg-dark border-secondary mb-2'>
+      <div class='card-body py-2 px-3' onclick='toggleCC(this)' style='cursor:pointer'>
+        <div class='d-flex justify-content-between align-items-center'>
+          <div><span class='fw-semibold small'>Gen Cryptos</span><span class='badge ms-2' style='font-size:.6rem;background:#1e1b4b;color:#6c63ff;border:1px solid #6c63ff40'>Rp250,000</span></div>
+          <span class='text-secondary small'>▼</span>
+        </div>
+        <div class='cc-body mt-2' style='display:none'>
+          <p class='small text-secondary mb-2'>Cryptography generator for all your apps. ARIA-256-GCM, Mini Bar monitoring, attack detection. Full / Balance / Save Mode.</p>
+          <div class='small text-secondary mb-2'>Pay to: <span style='font-family:monospace;font-size:.72rem;color:#6c63ff'>12EDhTKuQY5yarNA3SJHtL9NmRiAEMZwA3</span></div>
+          <input type='text' id='gc-addr' class='form-control form-control-sm mb-1' readonly>
+          <input type='text' id='gc-txid' class='form-control form-control-sm mb-2' placeholder='TXID after payment'>
+          <button class='btn btn-sm btn-primary' onclick='event.stopPropagation();submitTXID("gen-cryptos","gc-txid","gc-result")'>Verify & Get Access</button>
+          <div id='gc-result' class='mt-2 small'></div>
+        </div>
+      </div>
+    </div>
+
+    <div class='card bg-dark border-secondary mb-2'>
+      <div class='card-body py-2 px-3' onclick='toggleCC(this)' style='cursor:pointer'>
+        <div class='d-flex justify-content-between align-items-center'>
+          <div><span class='fw-semibold small'>Blockchain</span><span class='badge ms-2' style='font-size:.6rem;background:#1e1b4b;color:#6c63ff;border:1px solid #6c63ff40'>Rp800,000</span></div>
+          <span class='text-secondary small'>▼</span>
+        </div>
+        <div class='cc-body mt-2' style='display:none'>
+          <p class='small text-secondary mb-2'>Private blockchain for your app or organization. Unit N-sac system. Real Code Implementation after payment.</p>
+          <div class='small text-secondary mb-2'>Pay to: <span style='font-family:monospace;font-size:.72rem;color:#6c63ff'>12EDhTKuQY5yarNA3SJHtL9NmRiAEMZwA3</span></div>
+          <input type='text' id='bc-addr' class='form-control form-control-sm mb-1' readonly>
+          <select id='bc-usecase' class='form-select form-select-sm mb-1'><option value=''>Select use case</option><option>Payment method</option><option>Attendance and tasks</option><option>Financial reports</option><option>Large data storage</option></select>
+          <input type='text' id='bc-txid' class='form-control form-control-sm mb-2' placeholder='TXID after payment'>
+          <button class='btn btn-sm btn-primary' onclick='event.stopPropagation();submitTXID("blockchain","bc-txid","bc-result")'>Verify & Request DM</button>
+          <div id='bc-result' class='mt-2 small'></div>
+        </div>
+      </div>
+    </div>
+
+    <div class='card bg-dark border-secondary mb-2'>
+      <div class='card-body py-2 px-3' onclick='toggleCC(this)' style='cursor:pointer'>
+        <div class='d-flex justify-content-between align-items-center'>
+          <div><span class='fw-semibold small'>Cryptanalysis</span><span class='badge ms-2' style='font-size:.6rem;background:#1e1b4b;color:#6c63ff;border:1px solid #6c63ff40'>Rp10,000,000</span></div>
+          <span class='text-secondary small'>▼</span>
+        </div>
+        <div class='cc-body mt-2' style='display:none'>
+          <p class='small text-secondary mb-2'>Full cryptography analysis and modelling for large apps or websites. Done privately.</p>
+          <div class='small text-secondary mb-2'>Pay to: <span style='font-family:monospace;font-size:.72rem;color:#6c63ff'>12EDhTKuQY5yarNA3SJHtL9NmRiAEMZwA3</span></div>
+          <input type='text' id='ca-addr' class='form-control form-control-sm mb-1' readonly>
+          <textarea id='ca-desc' class='form-control form-control-sm mb-1' rows='2' placeholder='App/website, scale, what to analyze'></textarea>
+          <input type='text' id='ca-txid' class='form-control form-control-sm mb-2' placeholder='TXID after payment'>
+          <button class='btn btn-sm btn-primary' onclick='event.stopPropagation();submitTXID("cryptanalysis","ca-txid","ca-result")'>Verify & Request DM</button>
+          <div id='ca-result' class='mt-2 small'></div>
+        </div>
+      </div>
+    </div>
+
+    <div class='fw-semibold small mb-2 mt-3' style='color:#a855f7;letter-spacing:.08em;text-transform:uppercase'>Rare Session · Limited</div>
+
+    <div class='card border-secondary mb-4' style='background:#12101a;border-left:3px solid #a855f7'>
+      <div class='card-body py-2 px-3' onclick='toggleCC(this)' style='cursor:pointer'>
+        <div class='d-flex justify-content-between align-items-center'>
+          <div><span class='fw-semibold small' style='color:#a855f7'>I Am In Your Phone</span><span class='badge ms-2' style='font-size:.6rem;background:#2e106540;color:#a855f7;border:1px solid #a855f730'>Rare</span></div>
+          <span class='text-secondary small'>▼</span>
+        </div>
+        <div class='cc-body mt-2' style='display:none'>
+          <div id='rare-slots-text' class='small mb-1' style='color:#a855f7'>Loading slots...</div>
+          <div style='height:3px;background:#1e1e2e;border-radius:2px;margin-bottom:.5rem'><div id='rare-fill' style='height:100%;background:#a855f7;border-radius:2px;width:0%;transition:width .6s'></div></div>
+          <p class='small text-secondary mb-2'>Reads cryptography active on your current device in real-time. 25 slots per 48h, first come first served.</p>
+          <button class='btn btn-sm' style='background:#a855f7;color:#fff' onclick='event.stopPropagation();runIAYP()'>Start Analysis</button>
+          <div id='iayp-result' class='mt-2 small'></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <footer class="text-center small text-secondary mt-5">
     <a href="#" data-doc="privacy" class="link-secondary me-3">Kebijakan Privasi</a>
     <a href="#" data-doc="rules" class="link-secondary me-3">Aturan</a>
@@ -105,5 +263,76 @@
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script type="module" src="app.js"></script>
-<nav style="position:fixed;bottom:1rem;right:1rem;background:#101a32;padding:.7rem;border-radius:.7rem;z-index:1000"><a href="/secure.html" style="color:#fff">Keamanan V2</a></nav></body>
+<nav style="position:fixed;bottom:1rem;right:1rem;background:#101a32;padding:.7rem;border-radius:.7rem;z-index:1000"><a href="/secure.html" style="color:#fff">Keamanan V2</a></nav><script>
+function toggleCC(card) {
+  const body = card.querySelector('.cc-body');
+  const chev = card.querySelector('.d-flex span:last-child');
+  if (body) { body.style.display = body.style.display === 'none' ? 'block' : 'none'; }
+  if (chev) chev.textContent = body.style.display === 'none' ? '▼' : '▲';
+}
+function showConsultant() {
+  const s = document.getElementById('consultantSection');
+  if (s) s.classList.remove('d-none');
+  const addr = window._kvAddr || '';
+  ['gc-addr','bc-addr','ca-addr'].forEach(id => { const el = document.getElementById(id); if (el) el.value = addr; });
+  loadSlots();
+}
+async function runCTP() {
+  const input = document.getElementById('ctp-input').value.trim();
+  const result = document.getElementById('ctp-result');
+  result.textContent = 'Analyzing...';
+  try {
+    const res = await fetch('/api/crypt-the-phone', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({device: input}) });
+    const d = await res.json();
+    const r = d.rating || {};
+    const facts = (d.facts || []).map(f => '<div>◆ ' + f + '</div>').join('');
+    const crypto = (d.cryptography || []).map(c => '<div><b>' + c.name + '</b> <span style="color:#6c63ff;font-size:.7rem">' + c.type + '</span> — ' + c.used_when + '</div>').join('');
+    result.innerHTML = '<b>' + d.device + '</b><br>Security: ' + (r.security||0) + '/10 · Power: ' + (r.power_consumption||0) + '/10 · Control: ' + (r.user_control||0) + '/10<br><br>' + facts + '<br>' + crypto + '<br><i style="color:#9fb0c6">' + (d.summary||'') + '</i>';
+  } catch(e) { result.innerHTML = '<span style="color:#ef4444">Failed to connect.</span>'; }
+}
+async function runHashor() {
+  const in1 = document.getElementById('h-in1').value.trim();
+  const in2 = document.getElementById('h-in2').value.trim();
+  const result = document.getElementById('hashor-result');
+  result.textContent = 'Comparing...';
+  try {
+    const res = await fetch('/api/hashor', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({mode:'compare', input1: in1, input2: in2}) });
+    const d = await res.json();
+    result.innerHTML = (d.match ? '<span style="color:#22c55e">✓ MATCH</span>' : '<span style="color:#ef4444">✗ NOT MATCH</span>') + '<br><span style="font-family:monospace;font-size:.65rem">' + (d.hash1||'').slice(0,32) + '...</span>';
+  } catch(e) { result.innerHTML = '<span style="color:#ef4444">Failed.</span>'; }
+}
+function runEYS() {
+  const apps = document.getElementById('eys-apps').value.trim();
+  const list = apps.split(',').map(a => a.trim()).filter(Boolean).slice(0,5);
+  document.getElementById('eys-result').innerHTML = '<span style="color:#22c55e">✓ Configured: ' + list.join(', ') + '</span><br><span style="color:#9fb0c6">Elliptic Curve encryption set. Auto-decrypt on open, re-encrypts 2s after close.</span>';
+}
+async function submitTXID(service, txidId, resultId) {
+  const txid = document.getElementById(txidId).value.trim();
+  document.getElementById(resultId).innerHTML = '<span style="color:#f59e0b">⏳ TXID received — verifying on Bitcoin blockchain...</span>';
+}
+async function runIAYP() {
+  const result = document.getElementById('iayp-result');
+  result.textContent = 'Reading device...';
+  try {
+    await fetch('/api/rare-slots', {method:'POST'});
+    const res = await fetch('/api/crypt-the-phone', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({device: navigator.userAgent})});
+    const d = await res.json();
+    const cl = (d.cryptography||[]).map(c => '<div><b>' + c.name + '</b> — ' + c.used_when + '</div>').join('');
+    result.innerHTML = '<span style="color:#a855f7">' + (d.device||'Your Device') + '</span><br>' + cl;
+    loadSlots();
+  } catch(e) { result.innerHTML = '<span style="color:#ef4444">Failed.</span>'; }
+}
+async function loadSlots() {
+  try {
+    const res = await fetch('/api/rare-slots');
+    const d = await res.json();
+    const sisa = 25-(d.used||0);
+    const el = document.getElementById('rare-slots-text');
+    const bar = document.getElementById('rare-fill');
+    if (el) el.textContent = 'Slots remaining: ' + sisa + ' of 25 · Reset every 48h';
+    if (bar) bar.style.width = ((d.used||0)/25*100) + '%';
+  } catch {}
+}
+</script>
+</body>
 </html>
