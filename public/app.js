@@ -485,7 +485,7 @@ function downloadKeysJsonl() {
     encryption: 'Password-protected Key Vault backup',
     createdAt: new Date().toISOString()
   };
-  const blob = new Blob([JSON.stringify(data) + '\\n'], {type: 'application/x-ndjson'});
+  const blob = new Blob([JSON.stringify(data) + '\n'], {type: 'application/x-ndjson'});
   const a = document.createElement('a');
   a.href = URL.createObjectURL(blob);
   a.download = 'keyvault-' + vault.addr.slice(0,10) + '.jsonl';
