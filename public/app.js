@@ -147,6 +147,7 @@ async function hashFile(file, algo = 'sha256') {
   bump('hash');
   return hex(h.digest());
 }
+window.keyVaultHashFile = hashFile;
 
 const CIPHER_ID = { serpent256: 3, aria256gcm: 4, cast256: 5 };
 const CIPHER_NAME = { 3: 'serpent256', 4: 'aria256gcm', 5: 'cast256' };

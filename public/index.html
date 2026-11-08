@@ -118,11 +118,15 @@
           <span class='text-secondary small'>▼</span>
         </div>
         <div class='cc-body mt-2' style='display:none'>
-          <p class='small text-secondary mb-2'>Compare 2 URLs or files to prove authenticity. Detect phishing links and fake files.</p>
-          <input type='text' id='h-in1' class='form-control form-control-sm mb-1' placeholder='Input 1 (text or URL)'>
-          <input type='text' id='h-in2' class='form-control form-control-sm mb-2' placeholder='Input 2 (text or URL)'>
-          <button class='btn btn-sm btn-success' onclick='event.stopPropagation();runHashor()'>Compare</button>
-          <div id='hashor-result' class='mt-2 small'></div>
+          <p class='small text-secondary mb-2'>Bandingkan isi dua file, teks, atau URL. File diproses bertahap di perangkat; URL hanya dapat dibaca jika server tujuan mengizinkan akses lintas-origin (CORS).</p>
+          <label class='form-label small mb-1' for='h-in1'>Sumber pertama — teks atau URL</label>
+          <input type='text' id='h-in1' class='form-control form-control-sm mb-1' placeholder='Teks atau https://alamat-file'>
+          <input type='file' id='h-file1' class='form-control form-control-sm mb-2' aria-label='Pilih file pertama'>
+          <label class='form-label small mb-1' for='h-in2'>Sumber kedua — teks atau URL</label>
+          <input type='text' id='h-in2' class='form-control form-control-sm mb-1' placeholder='Teks atau https://alamat-file'>
+          <input type='file' id='h-file2' class='form-control form-control-sm mb-2' aria-label='Pilih file kedua'>
+          <button class='btn btn-sm btn-success' onclick='event.stopPropagation();runHashor()'>Hitung dan Bandingkan</button>
+          <div id='hashor-result' class='mt-2 small' aria-live='polite'></div>
         </div>
       </div>
     </div>
@@ -291,15 +295,58 @@ async function runCTP() {
   } catch(e) { result.innerHTML = '<span style="color:#ef4444">Failed to connect.</span>'; }
 }
 async function runHashor() {
-  const in1 = document.getElementById('h-in1').value.trim();
-  const in2 = document.getElementById('h-in2').value.trim();
   const result = document.getElementById('hashor-result');
-  result.textContent = 'Comparing...';
+  const button = result.parentElement.querySelector('button');
+  const maxBytes = 100 * 1024 * 1024;
+  const sources = [
+    { text: document.getElementById('h-in1').value.trim(), file: document.getElementById('h-file1').files[0] },
+    { text: document.getElementById('h-in2').value.trim(), file: document.getElementById('h-file2').files[0] }
+  ];
+  async function resolveSource(source, index) {
+    if (source.file) return source.file;
+    if (!source.text) throw new Error('Sumber ' + (index + 1) + ' masih kosong.');
+    if (/^https?:\\/\\//i.test(source.text)) {
+      const url = new URL(source.text);
+      if (url.username || url.password) throw new Error('URL tidak boleh berisi username atau password.');
+      const response = await fetch(url.href, { method: 'GET', mode: 'cors', credentials: 'omit', redirect: 'error', cache: 'no-store' });
+      if (!response.ok) throw new Error('URL ' + (index + 1) + ' merespons HTTP ' + response.status + '.');
+      const declared = Number(response.headers.get('content-length') || 0);
+      if (declared > maxBytes) throw new Error('Ukuran URL melebihi batas 100 MiB.');
+      const blob = await response.blob();
+      if (blob.size > maxBytes) throw new Error('Ukuran URL melebihi batas 100 MiB.');
+      return new File([blob], url.pathname.split('/').filter(Boolean).pop() || ('url-' + (index + 1)));
+    }
+    return new File([source.text], 'text-' + (index + 1) + '.txt', { type: 'text/plain;charset=utf-8' });
+  }
+  button.disabled = true;
+  result.textContent = 'Membaca sumber dan menghitung SHA-256 serta RIPEMD-320...';
   try {
-    const res = await fetch('/api/hashor', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({mode:'compare', input1: in1, input2: in2}) });
-    const d = await res.json();
-    result.innerHTML = (d.match ? '<span style="color:#22c55e">✓ MATCH</span>' : '<span style="color:#ef4444">✗ NOT MATCH</span>') + '<br><span style="font-family:monospace;font-size:.65rem">' + (d.hash1||'').slice(0,32) + '...</span>';
-  } catch(e) { result.innerHTML = '<span style="color:#ef4444">Failed.</span>'; }
+    const files = await Promise.all(sources.map(resolveSource));
+    const [sha1, sha2, ripemd1, ripemd2] = await Promise.all([
+      window.keyVaultHashFile(files[0], 'sha256'),
+      window.keyVaultHashFile(files[1], 'sha256'),
+      window.keyVaultHashFile(files[0], 'ripemd320'),
+      window.keyVaultHashFile(files[1], 'ripemd320')
+    ]);
+    const same = sha1 === sha2 && ripemd1 === ripemd2;
+    result.textContent = [
+      same ? '✓ MATCH — kedua sumber memiliki isi identik.' : '✗ NOT MATCH — isi kedua sumber berbeda.',
+      'SHA-256 sumber 1: ' + sha1,
+      'SHA-256 sumber 2: ' + sha2,
+      'RIPEMD-320 sumber 1: ' + ripemd1,
+      'RIPEMD-320 sumber 2: ' + ripemd2,
+      'Nama sumber: ' + files[0].name + ' | ' + files[1].name,
+      'Catatan: kecocokan hash membuktikan kesamaan byte yang diperiksa, bukan bahwa sumber tepercaya atau bebas phishing.'
+    ].join('\\n');
+    result.style.whiteSpace = 'pre-wrap';
+    result.style.overflowWrap = 'anywhere';
+  } catch (error) {
+    result.textContent = error.message && error.message.includes('Failed to fetch')
+      ? 'URL tidak dapat dibaca oleh browser. Server tujuan mungkin tidak mengizinkan CORS; unduh file lalu pilih melalui input file.'
+      : (error.message || 'Hashor gagal memproses sumber.');
+  } finally {
+    button.disabled = false;
+  }
 }
 function runEYS() {
   const result = document.getElementById('eys-result');
