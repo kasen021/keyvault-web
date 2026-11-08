@@ -74,8 +74,9 @@ function bump(kind, n = 1) {
 
 // ---------- Vault: private key dilindungi kata sandi ----------
 async function storeVault() {
-  const header = { v: 2, addr: vault.addr, salt: hex(vaultMeta.salt), iter: vaultMeta.iter, layers: cascadeLayers() };
+  const header = { v: 3, addr: vault.addr, salt: hex(vaultMeta.salt), iter: vaultMeta.iter, layers: cascadeLayers(), updatedAt: Date.now() };
   localStorage.setItem(K_VAULT, JSON.stringify(await sealVault(vault, master, header)));
+  if (serverOk) await syncVaultToServer();
 }
 async function loadAuthKey() {
   authKey = await crypto.subtle.importKey('jwk', vault.p256, { name: 'ECDSA', namedCurve: 'P-256' }, false, ['sign']);
@@ -263,7 +264,8 @@ async function signFile(file, algos, hashAlgo = 'sha256') {
   return h;
 }
 
-const DEFAULT_SERVER = location.hostname.endsWith('github.io') ? 'https://keyvault-web.aste53347.workers.dev' : '';
+// Backend otomatis untuk seluruh domain frontend; pengguna tidak perlu memasukkan URL/DNS sendiri.
+const DEFAULT_SERVER = 'https://keyvault-web.aste53347.workers.dev';
 const userServers = () => JSON.parse(localStorage.getItem(K_SERVERS) || '[]');
 const serverList = () => [...new Set([DEFAULT_SERVER, ...userServers()])];
 let base = DEFAULT_SERVER, serverOk = false, clockOffset = 0, srvInfo = null, loopTimer = null;
@@ -300,9 +302,9 @@ async function authHeaders(method, path, text) {
   const sig = new Uint8Array(await crypto.subtle.sign({ name: 'ECDSA', hash: 'SHA-256' }, authKey, msg));
   return { 'x-kv-ed': vault.edPub, 'x-kv-p256': vault.p256pub, 'x-kv-ts': String(ts), 'x-kv-sig': hex(sig) };
 }
-async function api(path, body, auth = false) {
+async function api(path, body, auth = false, methodOverride = null) {
   try {
-    const method = body ? 'POST' : 'GET';
+    const method = methodOverride || (body ? 'POST' : 'GET');
     const text = body ? JSON.stringify(body) : '';
     const headers = body ? { 'content-type': 'application/json' } : {};
     if (auth) Object.assign(headers, await authHeaders(method, path, text));
@@ -312,10 +314,35 @@ async function api(path, body, auth = false) {
     return { ok: false, status: 0, data: { error: 'Server tidak terjangkau' } };
   }
 }
+async function syncVaultToServer() {
+  if (!serverOk || !vault) return false;
+  const raw = localStorage.getItem(K_VAULT);
+  if (!raw) return false;
+  let encryptedVault;
+  try { encryptedVault = JSON.parse(raw); } catch { return false; }
+  const result = await api('/api/vault', { vault: encryptedVault }, true, 'PUT');
+  if (!result.ok) {
+    console.warn('Key Vault encrypted sync failed:', result.data.error || result.status);
+    return false;
+  }
+  return true;
+}
+
+async function fetchRemoteVault(address) {
+  const endpoint = (base || DEFAULT_SERVER) + '/api/vault?addr=' + encodeURIComponent(address);
+  const response = await fetch(endpoint, { cache: 'no-store', signal: AbortSignal.timeout(12000) });
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok || !data.vault) throw new Error(data.error || 'Vault tidak ditemukan di backend.');
+  const header = JSON.parse(data.vault.h);
+  if (header.addr !== address || !/^[a-z2-7]{26}$/.test(address)) throw new Error('Alamat tidak cocok dengan data vault.');
+  localStorage.setItem(K_VAULT, JSON.stringify(data.vault));
+  return true;
+}
+
 async function connectLoop() {
   const was = serverOk;
   await connectServer();
-  if (serverOk && !was) { await syncModes(); await loadLedger();  renderPanel(currentCat); }
+  if (serverOk && !was) { await syncModes(); await loadLedger(); await syncVaultToServer(); renderPanel(currentCat); }
   if (!serverOk && was) { await loadLedger();  }
   if (!serverOk && !was) await loadLedger();
   clearTimeout(loopTimer);
@@ -545,6 +572,7 @@ async function enter() {
   renderCats(); 
   if (!entered) { entered = true; startIdleLock(); window.addEventListener('online', connectLoop); }
   await connectLoop();
+  if (serverOk) await syncVaultToServer();
   startDash();
 }
 function showPassForm({ title, confirm, button, onSubmit }) {
@@ -574,11 +602,53 @@ function showPassForm({ title, confirm, button, onSubmit }) {
   if (p2) p2.onkeydown = (e) => { if (e.key === 'Enter') go.click(); };
   $('#btnAddr').after(box); p1.focus();
 }
+function showEntryChoices() {
+  const old = $('#lockBox'); if (old) old.remove();
+  const box = el('div', 'mt-3 mx-auto text-start'); box.id = 'lockBox'; box.style.maxWidth = '360px';
+  box.appendChild(el('div', 'fw-semibold mb-2', 'Mulai menggunakan Key Vault'));
+  box.appendChild(el('div', 'small-note mb-3', 'Buat alamat baru atau pulihkan vault yang sudah pernah dibuat dari perangkat lain.'));
+  const create = el('button', 'btn btn-primary w-100 mb-2', 'Buat Alamat Baru');
+  const login = el('button', 'btn btn-outline-light w-100', 'Masuk dengan Alamat yang Sudah Ada');
+  create.onclick = () => {
+    box.remove();
+    showPassForm({ title: 'Buat kata sandi vault', confirm: true, button: 'Buat Key Vault', onSubmit: async (p) => { await createVault(p); await enter(); } });
+  };
+  login.onclick = () => showRemoteAddressForm(box);
+  box.append(create, login);
+  $('#btnAddr').after(box);
+}
+
+function showRemoteAddressForm(previousBox) {
+  if (previousBox) previousBox.remove();
+  const old = $('#lockBox'); if (old) old.remove();
+  const box = el('div', 'mt-3 mx-auto text-start'); box.id = 'lockBox'; box.style.maxWidth = '360px';
+  box.appendChild(el('div', 'fw-semibold mb-2', 'Pulihkan Key Vault'));
+  box.appendChild(el('div', 'small-note mb-2', 'Masukkan alamat Key Vault. Data yang diambil tetap terenkripsi; server tidak menerima kata sandi atau Private Key.'));
+  const address = el('input', 'form-control mb-2'); address.placeholder = 'Alamat Key Vault'; address.autocomplete = 'off';
+  const msg = el('div', 'small text-danger mb-2');
+  const go = el('button', 'btn btn-primary w-100', 'Ambil Vault Terenkripsi');
+  go.onclick = async () => {
+    const addr = address.value.trim().toLowerCase();
+    if (!/^[a-z2-7]{26}$/.test(addr)) { msg.textContent = 'Format alamat tidak valid.'; return; }
+    go.disabled = true; go.textContent = 'Mengambil data...'; msg.textContent = '';
+    try {
+      await fetchRemoteVault(addr);
+      location.reload();
+    } catch (error) {
+      msg.textContent = error.message || 'Gagal mengambil vault.';
+      go.disabled = false; go.textContent = 'Ambil Vault Terenkripsi';
+    }
+  };
+  address.onkeydown = (e) => { if (e.key === 'Enter') go.click(); };
+  box.append(address, msg, go);
+  $('#btnAddr').after(box); address.focus();
+}
+
 $('#btnAddr').onclick = () => {
   if (vault) return enter();
   if (localStorage.getItem(K_VAULT)) return showPassForm({ title: 'Buka Key Vault', button: 'Buka', onSubmit: async (p) => { await unlockVault(p); await enter(); } });
   if (localStorage.getItem(K_LEGACY)) return showPassForm({ title: 'Amankan vault lama dengan kata sandi', confirm: true, button: 'Amankan', onSubmit: async (p) => { await migrateLegacy(p); await enter(); } });
-  showPassForm({ title: 'Buat kata sandi vault', confirm: true, button: 'Buat Key Vault', onSubmit: async (p) => { await createVault(p); await enter(); } });
+  showEntryChoices();
 };
 $('#btnCopy').onclick = () => navigator.clipboard.writeText(vault.addr);
 $('#btnBackup').onclick = async () => {
