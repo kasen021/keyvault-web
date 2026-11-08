@@ -7,7 +7,7 @@
   "scripts": {
     "start": "node secure-start.cjs",
     "public": "bash start-public.sh",
-    "test": "node selftest.mjs",
+    "test": "node selftest.mjs && node --test replay-guard.test.mjs",
     "check:worker": "node scripts/check-worker-config.mjs",
     "deploy:worker": "npm run check:worker && npx wrangler deploy",
     "start:legacy": "node server.js"

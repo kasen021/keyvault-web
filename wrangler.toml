@@ -14,6 +14,14 @@ bucket_name = "keyvault-personal-vault"
 name = "METRICS"
 class_name = "Metrics"
 
+[[durable_objects.bindings]]
+name = "REPLAY_GUARD"
+class_name = "ReplayGuard"
+
 [[migrations]]
 tag = "v1"
 new_sqlite_classes = ["Metrics"]
+
+[[migrations]]
+tag = "v2"
+new_sqlite_classes = ["ReplayGuard"]
