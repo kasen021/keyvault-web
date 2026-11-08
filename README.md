@@ -34,7 +34,7 @@ Paste the exact 26-character Key Vault address when prompted. Creator access is 
 
 - Files of any format are encrypted in the browser with an X448-wrapped AES-256-GCM file key before upload.
 - The upload session opens for 25 seconds. It controls when file selection can begin; an upload already started continues until it finishes. Open a new session for another upload batch.
-- Each file is streamed in 4 MiB encrypted chunks. The Worker streams ciphertext into Cloudflare R2 and enforces a 90 MB per-file request limit.
+- Each file is streamed in 4 MiB encrypted chunks. The Worker streams ciphertext into Cloudflare R2; the browser limits plaintext files to 90 MB and the Worker caps the encrypted stream at 95 MB.
 - R2 object keys contain only the account address and random file ID. Filenames and the file list are kept inside the user's password-encrypted vault envelope in KV.
 - The file contents are never sent to the Worker in plaintext. Decryption happens in the browser after the ciphertext is fetched.
 - R2 is a separate Cloudflare binding. Create the bucket once, then deploy the Worker:
