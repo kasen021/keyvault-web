@@ -342,7 +342,7 @@ async function fetchRemoteVault(address) {
 async function connectLoop() {
   const was = serverOk;
   await connectServer();
-  if (serverOk && !was) { await syncModes(); await loadLedger(); await syncVaultToServer(); renderPanel(currentCat); }
+  if (serverOk && !was) { await syncModes(); await loadLedger(); await syncVaultToServer(); await checkCreator(); renderPanel(currentCat); }
   if (!serverOk && was) { await loadLedger();  }
   if (!serverOk && !was) await loadLedger();
   clearTimeout(loopTimer);
@@ -425,7 +425,7 @@ function mountDash() {}
 
 
 
-function startDash() { showKeyInfo(); }
+function startDash() { showKeyInfo(); checkCreator(); }
 
 const DOCS = {
   privacy: ['Kebijakan Privasi', 'Key Vault tidak meminta email atau nomor telepon. Kunci dan dokumen diproses di browser kamu dan tidak diunggah. Private key disimpan terenkripsi dengan kata sandi milikmu. Server tidak mencatat alamat IP, tidak meneruskan IP ke DNS upstream, dan hanya menyimpan: alamat anonim, daftar mode ON, hash token DNS, jumlah permintaan DNS per jam (hanya angka, tanpa nama situs dan tanpa IP), dan blok ledger (nama file, hash yang dibandingkan, hasil, alamat penanda tangan). IP-mu hanya ditampilkan kepadamu saat kamu menekan Cek ulang di Pusat Perlindungan dan tidak disimpan. Kata sandi dan cadangan kunci adalah tanggung jawab kamu: yang hilang tidak bisa dipulihkan siapa pun.'],
@@ -496,8 +496,16 @@ function showConsultantSection() {
 }
 
 
-const CREATOR_ADDRESS = 'qtzdgwfcnsk2x5kdarctvnua4c';
-function isCreator() { return vault && vault.addr === CREATOR_ADDRESS; }
+let creatorVerified = false;
+function isCreator() { return creatorVerified; }
+async function checkCreator() {
+  creatorVerified = false;
+  if (!serverOk || !vault) return false;
+  const response = await api('/api/creator/status', null, true);
+  creatorVerified = Boolean(response.ok && response.data.creator === true);
+  if (creatorVerified) setupCreatorPanel();
+  return creatorVerified;
+}
 
 function downloadKeysJsonl() {
   if (!vault) return;
