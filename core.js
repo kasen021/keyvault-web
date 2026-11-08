@@ -25,7 +25,7 @@ const UPSTREAM = [
 
 const CORS = {
   'access-control-allow-origin': '*',
-  'access-control-allow-methods': 'GET, POST, PUT, OPTIONS',
+  'access-control-allow-methods': 'GET, POST, PUT, DELETE, OPTIONS',
   'access-control-allow-headers': 'content-type, x-kv-ed, x-kv-p256, x-kv-ts, x-kv-sig'
 };
 
@@ -320,6 +320,61 @@ export async function handle(req, env, ctx) {
       if (!stub) return json(200, { tersedia: false });
       const r = await stub.fetch('https://metrics/read');
       return json(200, { tersedia: true, ...(await r.json()) });
+    }
+
+    if (p === '/api/personal-vault' && req.method === 'GET') {
+      if (!env.PERSONAL_VAULT) throw new HttpError(503, 'Penyimpanan file belum dikonfigurasi');
+      const auth = await authenticate(req, u, '');
+      const result = await env.PERSONAL_VAULT.list({ prefix: 'vault/' + auth + '/', limit: 100 });
+      return json(200, {
+        files: result.objects.map((item) => ({
+          id: item.key.slice(('vault/' + auth + '/').length),
+          size: item.size,
+          uploaded: item.uploaded ? item.uploaded.getTime() : null
+        })),
+        truncated: result.truncated
+      });
+    }
+
+    if (p.startsWith('/api/personal-vault/') && ['PUT', 'GET', 'DELETE'].includes(req.method)) {
+      if (!env.PERSONAL_VAULT) throw new HttpError(503, 'Penyimpanan file belum dikonfigurasi');
+      const auth = await authenticate(req, u, '');
+      const id = p.slice('/api/personal-vault/'.length);
+      if (!/^[0-9a-f]{32}$/.test(id)) throw new HttpError(400, 'ID file tidak valid');
+      const key = 'vault/' + auth + '/' + id;
+      if (req.method === 'PUT') {
+        const size = Number(req.headers.get('content-length') || 0);
+        const maxSize = 95 * 1024 * 1024;
+        if (size > maxSize) throw new HttpError(413, 'File terenkripsi melebihi batas 95 MB');
+        if (!req.body) throw new HttpError(400, 'Isi file kosong');
+        let received = 0;
+        const boundedBody = req.body.pipeThrough(new TransformStream({
+          transform(chunk, controller) {
+            received += chunk.byteLength;
+            if (received > maxSize) throw new Error('Ukuran file melebihi batas 90 MB');
+            controller.enqueue(chunk);
+          }
+        }));
+        const saved = await env.PERSONAL_VAULT.put(key, boundedBody, {
+          httpMetadata: { contentType: 'application/octet-stream' }
+        });
+        return json(200, { saved: true, id, etag: saved.etag });
+      }
+      if (req.method === 'GET') {
+        const object = await env.PERSONAL_VAULT.get(key);
+        if (!object) throw new HttpError(404, 'File tidak ditemukan');
+        return new Response(object.body, {
+          headers: {
+            ...CORS,
+            'content-type': 'application/octet-stream',
+            'content-length': String(object.size),
+            'cache-control': 'no-store',
+            'content-disposition': 'attachment'
+          }
+        });
+      }
+      await env.PERSONAL_VAULT.delete(key);
+      return json(200, { deleted: true, id });
     }
 
     if (p === '/api/rotation' && req.method === 'GET') {

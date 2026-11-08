@@ -101,7 +101,7 @@ async function createVault(pass) {
     ed: hex(edPriv), edPub: hex(edPub),
     x: hex(x448.utils.randomPrivateKey()), sp: hex(secp256k1.utils.randomPrivateKey()),
     rsa: await crypto.subtle.exportKey('jwk', pair.privateKey), rsaPub: await crypto.subtle.exportKey('jwk', pair.publicKey),
-    p256: auth.p256, p256pub: hex(auth.p256pub)
+    p256: auth.p256, p256pub: hex(auth.p256pub), files: []
   };
   await protect(pass);
 }
@@ -109,7 +109,7 @@ async function migrateLegacy(pass) {
   const old = JSON.parse(localStorage.getItem(K_LEGACY));
   const edPub = ed448.getPublicKey(unhex(old.ed));
   const auth = await newAuthKeys();
-  vault = { ...old, edPub: hex(edPub), p256: auth.p256, p256pub: hex(auth.p256pub), addr: b32(sha256(cat(edPub, auth.p256pub))).slice(0, 26) };
+  vault = { ...old, edPub: hex(edPub), p256: auth.p256, p256pub: hex(auth.p256pub), addr: b32(sha256(cat(edPub, auth.p256pub))).slice(0, 26), files: [] };
   await protect(pass);
   localStorage.removeItem(K_LEGACY);
 }
@@ -120,6 +120,7 @@ async function unlockVault(pass) {
   const m = await deriveMaster(pass, salt, header.iter);
   try { vault = await openVault(stored, m); } catch { throw new Error('Kata sandi salah atau data vault rusak'); }
   master = m; vaultMeta = { salt, iter: header.iter };
+  if (!Array.isArray(vault.files)) vault.files = [];
   await loadAuthKey();
 }
 
@@ -338,6 +339,212 @@ async function fetchRemoteVault(address) {
   localStorage.setItem(K_VAULT, JSON.stringify(data.vault));
   return true;
 }
+
+const PERSONAL_VAULT_LIMIT = 90 * 1024 * 1024;
+let uploadWindowUntil = 0;
+let uploadWindowTimer = null;
+let personalVaultBusy = false;
+
+function personalVaultStatus(message, error = false) {
+  const node = document.getElementById('personal-vault-status');
+  if (node) {
+    node.textContent = message;
+    node.className = error ? 'small text-danger mt-2' : 'small text-secondary mt-2';
+  }
+}
+function renderPersonalVault() {
+  const box = document.getElementById('personal-vault-files');
+  if (!box || !vault) return;
+  box.replaceChildren();
+  const files = [...(vault.files || [])].sort((a, b) => b.createdAt - a.createdAt);
+  if (!files.length) {
+    box.textContent = 'Belum ada file tersimpan.';
+    return;
+  }
+  for (const item of files) {
+    const row = document.createElement('div');
+    row.className = 'd-flex flex-wrap align-items-center justify-content-between gap-2 border-top border-secondary py-2';
+    const details = document.createElement('div');
+    details.className = 'me-auto';
+    const name = document.createElement('div');
+    name.className = 'small fw-semibold';
+    name.textContent = item.name;
+    const meta = document.createElement('div');
+    meta.className = 'small text-secondary';
+    meta.textContent = fmtBytes(item.size) + ' · ' + new Date(item.createdAt).toLocaleString();
+    details.append(name, meta);
+    const download = document.createElement('button');
+    download.className = 'btn btn-sm btn-outline-info';
+    download.textContent = 'Dekripsi';
+    download.disabled = personalVaultBusy;
+    download.onclick = () => retrievePersonalFile(item);
+    const remove = document.createElement('button');
+    remove.className = 'btn btn-sm btn-outline-danger';
+    remove.textContent = 'Hapus';
+    remove.disabled = personalVaultBusy;
+    remove.onclick = () => deletePersonalFile(item);
+    row.append(details, download, remove);
+    box.append(row);
+  }
+}
+function updateUploadWindow() {
+  const remaining = Math.max(0, Math.ceil((uploadWindowUntil - Date.now()) / 1000));
+  const timer = document.getElementById('personal-vault-timer');
+  const picker = document.getElementById('personal-vault-input');
+  const open = document.getElementById('personal-vault-open');
+  if (timer) timer.textContent = remaining ? 'Sesi unggah aktif · ' + remaining + ' detik' : 'Sesi unggah tertutup';
+  if (picker) picker.disabled = !remaining || personalVaultBusy;
+  if (open) open.disabled = Boolean(remaining) || personalVaultBusy;
+  if (!remaining && uploadWindowTimer) {
+    clearInterval(uploadWindowTimer);
+    uploadWindowTimer = null;
+  }
+}
+function openPersonalVaultWindow() {
+  if (personalVaultBusy) return;
+  uploadWindowUntil = Date.now() + 25000;
+  updateUploadWindow();
+  if (uploadWindowTimer) clearInterval(uploadWindowTimer);
+  uploadWindowTimer = setInterval(updateUploadWindow, 250);
+  personalVaultStatus('Pilih file selama sesi 25 detik. Enkripsi berjalan di perangkat ini.');
+  document.getElementById('personal-vault-input')?.click();
+}
+async function encryptedFileStream(file) {
+  const { id, wrapped, key } = await newFileKey('x448');
+  const header = new Uint8Array(6 + wrapped.length);
+  header.set([75, 86, 49, id], 0);
+  new DataView(header.buffer).setUint16(4, wrapped.length);
+  header.set(wrapped, 6);
+  let offset = 0, index = 0, sentHeader = false;
+  return new ReadableStream({
+    async pull(controller) {
+      try {
+        if (!sentHeader) {
+          sentHeader = true;
+          controller.enqueue(header);
+          return;
+        }
+        if (offset >= file.size) {
+          controller.close();
+          return;
+        }
+        const plain = await file.slice(offset, Math.min(offset + CH, file.size)).arrayBuffer();
+        const iv = crypto.getRandomValues(new Uint8Array(12));
+        const encrypted = await sealChunk(key, iv, ctr(index), plain);
+        const length = new Uint8Array(4);
+        new DataView(length.buffer).setUint32(0, encrypted.length);
+        const frame = new Uint8Array(16 + encrypted.length);
+        frame.set(length, 0);
+        frame.set(iv, 4);
+        frame.set(encrypted, 16);
+        controller.enqueue(frame);
+        offset += plain.byteLength;
+        index++;
+      } catch (error) {
+        controller.error(error);
+      }
+    }
+  });
+}
+async function uploadPersonalFile(file) {
+  if (file.size > PERSONAL_VAULT_LIMIT) throw new Error('Ukuran file melewati batas 90 MB untuk satu unggahan.');
+  if (!serverOk) throw new Error('Backend belum terhubung. File belum diunggah.');
+  const id = hex(crypto.getRandomValues(new Uint8Array(16)));
+  const path = '/api/personal-vault/' + id;
+  const headers = await authHeaders('PUT', path, '');
+  headers['content-type'] = 'application/octet-stream';
+  let response;
+  try {
+    const body = await encryptedFileStream(file);
+    response = await fetch(base + path, { method: 'PUT', headers, body, duplex: 'half' });
+  } catch (error) {
+    if (!(error instanceof TypeError)) throw error;
+    const buffered = await new Response(await encryptedFileStream(file)).blob();
+    response = await fetch(base + path, { method: 'PUT', headers, body: buffered });
+  }
+  const result = await response.json().catch(() => ({}));
+  if (!response.ok || !result.saved) throw new Error(result.error || 'Penyimpanan file gagal.');
+  vault.files = [...(vault.files || []), { id, name: file.name, size: file.size, createdAt: Date.now(), cipher: 'X448 + AES-256-GCM' }];
+  await storeVault();
+  const indexSynced = serverOk && await syncVaultToServer();
+  bump('enc');
+  renderPersonalVault();
+  return indexSynced;
+}
+async function retrievePersonalFile(item) {
+  if (!serverOk || personalVaultBusy) return;
+  personalVaultBusy = true;
+  renderPersonalVault();
+  try {
+    const path = '/api/personal-vault/' + item.id;
+    const headers = await authHeaders('GET', path, '');
+    const response = await fetch(base + path, { headers, cache: 'no-store' });
+    if (!response.ok) {
+      const data = await response.json().catch(() => ({}));
+      throw new Error(data.error || 'File tidak dapat diambil.');
+    }
+    const encrypted = await response.blob();
+    const file = new File([encrypted], item.name + '.kv', { type: 'application/octet-stream' });
+    await decryptFile(file);
+    personalVaultStatus('File berhasil didekripsi dan disimpan ke perangkat.');
+  } catch (error) {
+    personalVaultStatus(error.message || 'Dekripsi gagal.', true);
+  } finally {
+    personalVaultBusy = false;
+    renderPersonalVault();
+    updateUploadWindow();
+  }
+}
+async function deletePersonalFile(item) {
+  if (!serverOk || personalVaultBusy || !confirm('Hapus file terenkripsi ini dari Personal Vault?')) return;
+  personalVaultBusy = true;
+  renderPersonalVault();
+  try {
+    const path = '/api/personal-vault/' + item.id;
+    const headers = await authHeaders('DELETE', path, '');
+    const response = await fetch(base + path, { method: 'DELETE', headers });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok || !data.deleted) throw new Error(data.error || 'Penghapusan gagal.');
+    vault.files = vault.files.filter(file => file.id !== item.id);
+    await storeVault();
+    personalVaultStatus('File dihapus dari penyimpanan terenkripsi.');
+  } catch (error) {
+    personalVaultStatus(error.message || 'Penghapusan gagal.', true);
+  } finally {
+    personalVaultBusy = false;
+    renderPersonalVault();
+    updateUploadWindow();
+  }
+}
+window.openPersonalVaultWindow = openPersonalVaultWindow;
+document.getElementById('personal-vault-input')?.addEventListener('change', async event => {
+  const files = Array.from(event.target.files || []);
+  event.target.value = '';
+  if (!files.length) return;
+  if (Date.now() > uploadWindowUntil) {
+    personalVaultStatus('Sesi unggah sudah berakhir. Buka sesi baru untuk memilih file.', true);
+    return;
+  }
+  if (personalVaultBusy) return;
+  personalVaultBusy = true;
+  updateUploadWindow();
+  try {
+    let indexSynced = true;
+    for (let index = 0; index < files.length; index++) {
+      personalVaultStatus('Mengenkripsi dan mengunggah ' + (index + 1) + '/' + files.length + ': ' + files[index].name);
+      indexSynced = await uploadPersonalFile(files[index]) && indexSynced;
+    }
+    personalVaultStatus(indexSynced
+      ? files.length + ' file berhasil dienkripsi dan disimpan.'
+      : 'File tersimpan terenkripsi, tetapi sinkronisasi daftar file tertunda. Vault lokal tetap menyimpan daftar file; sambungkan kembali backend untuk sinkronisasi.');
+  } catch (error) {
+    personalVaultStatus(error.message || 'Unggah gagal.', true);
+  } finally {
+    personalVaultBusy = false;
+    renderPersonalVault();
+    updateUploadWindow();
+  }
+});
 
 async function connectLoop() {
   const was = serverOk;

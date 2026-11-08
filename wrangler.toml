@@ -6,6 +6,10 @@ workers_dev = true
 [[kv_namespaces]]
 binding = "KV"
 
+[[r2_buckets]]
+binding = "PERSONAL_VAULT"
+bucket_name = "keyvault-personal-vault"
+
 [[durable_objects.bindings]]
 name = "METRICS"
 class_name = "Metrics"
