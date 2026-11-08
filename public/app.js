@@ -274,7 +274,7 @@ async function probe(s) {
   const t0 = performance.now();
   const r = await fetch(s + '/api/health', { cache: 'no-store', signal: AbortSignal.timeout(6000) });
   const j = await r.json();
-  if (!r.ok || j.nama !== 'Key Vault API' || !j.kv) throw new Error('Bukan server Key Vault');
+  if (!r.ok || j.nama !== 'Key Vault API' || !j.kv || Number(j.versi) < 3) throw new Error('Backend Key Vault V3 belum aktif');
   const ms = Math.round(performance.now() - t0);
   return { s, ms, colo: j.colo, offset: j.waktu - (Date.now() - ms / 2) };
 }
