@@ -10,13 +10,30 @@ Key Vault all-in-one berbasis website: enkripsi, hashing, tanda tangan digital, 
 - Magic Link is an address locator (`/?magic=<address>`), not a bearer credential. Opening it retrieves ciphertext; the user's Key Vault password is still required.
 - The API rejects a backend older than version 3 so the UI does not falsely show an old Worker as V3-ready.
 
-### Deploying the V3 backend
+### Deploying the V3 backend safely
 
-After pulling this branch, deploy the Worker separately from Vercel. First obtain the ID of the **existing** KV namespace already used by production and put that exact ID in the `[[kv_namespaces]]` entry in `wrangler.toml`; do not create or bind a new empty namespace because that would make old accounts and ledger history appear missing. Then deploy:
+The Worker must be deployed separately from Vercel. **Never create a replacement KV namespace to get past a missing ID**: that would make existing accounts and ledger history appear missing.
 
-    npx wrangler deploy
+1. List existing namespaces:
 
-Check:
+       npx wrangler kv namespace list
+
+2. Identify the exact production namespace previously used by Key Vault. Put its existing 32-character ID in the `id` field of the `[[kv_namespaces]]` block in `wrangler.toml`. Do not paste credentials or tokens into GitHub.
+3. Check the R2 bucket exists:
+
+       npx wrangler r2 bucket list
+
+   The configured bucket name is `keyvault-personal-vault`. Create it only if it is confirmed not to exist in the intended Cloudflare account:
+
+       npx wrangler r2 bucket create keyvault-personal-vault
+
+4. Run the guarded deployment command:
+
+       npm run deploy:worker
+
+   This first runs `npm run check:worker`. The preflight refuses to deploy if the existing KV namespace ID is missing/invalid or the Personal Vault R2 binding is absent. It does not create a namespace and does not print the namespace ID.
+
+Check the deployed Worker:
 
     curl https://keyvault-web.aste53347.workers.dev/api/health
 
@@ -28,7 +45,7 @@ Set the Creator address after creating/unlocking the intended Creator Key Vault:
 
 Paste the exact 26-character Key Vault address when prompted. Creator access is checked by the signed backend endpoint; the old hard-coded address in frontend JavaScript has been removed.
 
-**Not yet active:** native app protection (Encrypt Your Ssstt), real-time device instrumentation (I Am In Your Phone), and Bitcoin TXID verification. The interface now reports these as unavailable instead of pretending the operation succeeded.
+**Not yet active:** native app protection (Encrypt Your Ssstt), real-time device instrumentation (I Am In Your Phone), and Bitcoin TXID verification. The interface must report these as unavailable instead of pretending the operation succeeded.
 
 ## Personal Vault — encrypted file storage
 
@@ -37,12 +54,7 @@ Paste the exact 26-character Key Vault address when prompted. Creator access is 
 - Each file is streamed in 4 MiB encrypted chunks. The Worker streams ciphertext into Cloudflare R2; the browser limits plaintext files to 90 MB and the Worker caps the encrypted stream at 95 MB.
 - R2 object keys contain only the account address and random file ID. Filenames and the file list are kept inside the user's password-encrypted vault envelope in KV.
 - The file contents are never sent to the Worker in plaintext. Decryption happens in the browser after the ciphertext is fetched.
-- R2 is a separate Cloudflare binding. Create the bucket once, then deploy the Worker:
-
-      npx wrangler r2 bucket create keyvault-personal-vault
-      npx wrangler deploy
-
-  The existing KV namespace ID must remain unchanged. R2 storage and operation charges are governed by the Cloudflare account.
+- R2 storage and operation charges are governed by the Cloudflare account.
 
 ## Algoritma
 
@@ -57,7 +69,7 @@ Serpent-256, ARIA-256, CAST-256, RIPEMD-320, dan GCM ditulis sendiri di `public/
 
 Syarat: Node.js 18 atau lebih baru. Tanpa dependensi npm.
 
-    git clone https://github.com/USERNAME/keyvault-web.git
+    git clone https://github.com/kasen021/keyvault-web.git
     cd keyvault-web
     npm test
     npm start
