@@ -294,9 +294,19 @@ async function runCTP() {
     result.innerHTML = '<b>' + d.device + '</b><br>Security: ' + (r.security||0) + '/10 · Power: ' + (r.power_consumption||0) + '/10 · Control: ' + (r.user_control||0) + '/10<br><br>' + facts + '<br>' + crypto + '<br><i style="color:#9fb0c6">' + (d.summary||'') + '</i>';
   } catch(e) { result.innerHTML = '<span style="color:#ef4444">Failed to connect.</span>'; }
 }
+let hashorSha256;
 async function hashBytes(bytes) {
   const digest = await crypto.subtle.digest('SHA-256', bytes);
   return Array.from(new Uint8Array(digest), x => x.toString(16).padStart(2, '0')).join('');
+}
+async function hashFileChunks(file) {
+  if (!hashorSha256) ({ sha256: hashorSha256 } = await import('https://cdn.jsdelivr.net/npm/@noble/hashes@1.4.0/sha256/+esm'));
+  const state = hashorSha256.create();
+  const chunkSize = 4 * 1024 * 1024;
+  for (let offset = 0; offset < file.size; offset += chunkSize) {
+    state.update(new Uint8Array(await file.slice(offset, offset + chunkSize).arrayBuffer()));
+  }
+  return Array.from(state.digest(), x => x.toString(16).padStart(2, '0')).join('');
 }
 function inspectHashorUrl(value) {
   let parsed;
@@ -333,17 +343,19 @@ async function runHashor() {
   try {
     for (const item of inputs) {
       let bytes, source, warnings = [];
+      let digest;
       if (item.file) {
-        bytes = await item.file.arrayBuffer();
         source = 'File: ' + item.file.name + ' (' + item.file.size.toLocaleString() + ' byte)';
+        digest = await hashFileChunks(item.file);
       } else {
         const value = item.text.trim();
         bytes = new TextEncoder().encode(value);
         source = 'Teks/URL literal';
+        digest = await hashBytes(bytes);
         const urlWarnings = inspectHashorUrl(value);
         if (urlWarnings) warnings = urlWarnings.length ? urlWarnings : ['Format URL HTTP/HTTPS dikenali. Yang di-hash adalah teks URL, bukan konten halaman.'];
       }
-      outputs.push({ label: item.label, source, hash: await hashBytes(bytes), warnings });
+      outputs.push({ label: item.label, source, hash: digest, warnings });
     }
     const same = outputs[0].hash === outputs[1].hash;
     const wrap = document.createElement('div');
