@@ -322,6 +322,52 @@ export async function handle(req, env, ctx) {
       return json(200, { tersedia: true, ...(await r.json()) });
     }
 
+    if (p === '/api/personal-vault' && req.method === 'GET') {
+      if (!env.PERSONAL_VAULT) throw new HttpError(503, 'Penyimpanan file belum dikonfigurasi');
+      const auth = await authenticate(req, u, '');
+      const result = await env.PERSONAL_VAULT.list({ prefix: 'vault/' + auth + '/', limit: 100 });
+      return json(200, {
+        files: result.objects.map((item) => ({
+          id: item.key.slice(('vault/' + auth + '/').length),
+          size: item.size,
+          uploaded: item.uploaded ? item.uploaded.getTime() : null
+        })),
+        truncated: result.truncated
+      });
+    }
+
+    if (p.startsWith('/api/personal-vault/') && ['PUT', 'GET', 'DELETE'].includes(req.method)) {
+      if (!env.PERSONAL_VAULT) throw new HttpError(503, 'Penyimpanan file belum dikonfigurasi');
+      const auth = await authenticate(req, u, '');
+      const id = p.slice('/api/personal-vault/'.length);
+      if (!/^[0-9a-f]{32}$/.test(id)) throw new HttpError(400, 'ID file tidak valid');
+      const key = 'vault/' + auth + '/' + id;
+      if (req.method === 'PUT') {
+        const size = Number(req.headers.get('content-length') || 0);
+        if (size > 5 * 1024 * 1024 * 1024) throw new HttpError(413, 'File melebihi batas 5 GB');
+        if (!req.body) throw new HttpError(400, 'Isi file kosong');
+        const saved = await env.PERSONAL_VAULT.put(key, req.body, {
+          httpMetadata: { contentType: 'application/octet-stream' }
+        });
+        return json(200, { saved: true, id, etag: saved.etag });
+      }
+      if (req.method === 'GET') {
+        const object = await env.PERSONAL_VAULT.get(key);
+        if (!object) throw new HttpError(404, 'File tidak ditemukan');
+        return new Response(object.body, {
+          headers: {
+            ...CORS,
+            'content-type': 'application/octet-stream',
+            'content-length': String(object.size),
+            'cache-control': 'no-store',
+            'content-disposition': 'attachment'
+          }
+        });
+      }
+      await env.PERSONAL_VAULT.delete(key);
+      return json(200, { deleted: true, id });
+    }
+
     if (p === '/api/rotation' && req.method === 'GET') {
       const addr = u.searchParams.get('addr') || '';
       if (!ADDR_RE.test(addr)) throw new HttpError(400, 'Alamat tidak valid');
