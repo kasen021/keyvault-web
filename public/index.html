@@ -302,36 +302,22 @@ async function runHashor() {
   } catch(e) { result.innerHTML = '<span style="color:#ef4444">Failed.</span>'; }
 }
 function runEYS() {
-  const apps = document.getElementById('eys-apps').value.trim();
-  const list = apps.split(',').map(a => a.trim()).filter(Boolean).slice(0,5);
-  document.getElementById('eys-result').innerHTML = '<span style="color:#22c55e">✓ Configured: ' + list.join(', ') + '</span><br><span style="color:#9fb0c6">Elliptic Curve encryption set. Auto-decrypt on open, re-encrypts 2s after close.</span>';
+  const result = document.getElementById('eys-result');
+  result.textContent = 'Belum tersedia sebagai proteksi aplikasi. Website tidak memiliki izin OS untuk mengenkripsi data internal aplikasi lain atau mendeteksi aplikasi dibuka/ditutup. Fitur ini memerlukan implementasi native Android/iOS; tidak ada aplikasi yang dienkripsi oleh tombol ini.';
 }
 async function submitTXID(service, txidId, resultId) {
-  const txid = document.getElementById(txidId).value.trim();
-  document.getElementById(resultId).innerHTML = '<span style="color:#f59e0b">⏳ TXID received — verifying on Bitcoin blockchain...</span>';
+  const result = document.getElementById(resultId);
+  result.textContent = 'Verifikasi pembayaran Bitcoin belum terhubung ke node atau Blockchain Explorer. TXID belum diperiksa dan pembayaran belum diterima. Jangan mengirim dana melalui formulir ini dahulu.';
 }
 async function runIAYP() {
   const result = document.getElementById('iayp-result');
-  result.textContent = 'Reading device...';
-  try {
-    await fetch('/api/rare-slots', {method:'POST'});
-    const res = await fetch('/api/crypt-the-phone', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({device: navigator.userAgent})});
-    const d = await res.json();
-    const cl = (d.cryptography||[]).map(c => '<div><b>' + c.name + '</b> — ' + c.used_when + '</div>').join('');
-    result.innerHTML = '<span style="color:#a855f7">' + (d.device||'Your Device') + '</span><br>' + cl;
-    loadSlots();
-  } catch(e) { result.innerHTML = '<span style="color:#ef4444">Failed.</span>'; }
+  result.textContent = 'Belum tersedia: browser tidak dapat membaca algoritma yang digunakan aplikasi lain secara real-time. Analisis perangkat aktif memerlukan aplikasi native, izin OS, dan instrumentasi yang sesuai. Slot tidak dikurangi dan tidak ada pemindaian palsu.';
 }
 async function loadSlots() {
-  try {
-    const res = await fetch('/api/rare-slots');
-    const d = await res.json();
-    const sisa = 25-(d.used||0);
-    const el = document.getElementById('rare-slots-text');
-    const bar = document.getElementById('rare-fill');
-    if (el) el.textContent = 'Slots remaining: ' + sisa + ' of 25 · Reset every 48h';
-    if (bar) bar.style.width = ((d.used||0)/25*100) + '%';
-  } catch {}
+  const el = document.getElementById('rare-slots-text');
+  const bar = document.getElementById('rare-fill');
+  if (el) el.textContent = 'Kuota belum dibuka: backend slot permanen belum tersedia.';
+  if (bar) bar.style.width = '0%';
 }
 </script>
 </body>
