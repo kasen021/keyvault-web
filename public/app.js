@@ -423,18 +423,16 @@ function showKeyInfo() {
   box.style.cssText = 'border-left: 3px solid #3fa9f5';
   
   const edPub = hex(ed448.getPublicKey(unhex(vault.ed)));
-  const privKey = vault.ed;
   
   box.innerHTML = `
     <div class="card-body">
       <div class="fw-semibold mb-2">🔑 Keys & Identity</div>
       <div class="small-note mb-1">Public Key (Ed448 / Goldilocks)</div>
       <div class="addr small mb-2" style="font-size:.7rem;background:#0b1626;padding:.4rem;border-radius:4px">${edPub}</div>
-      <div class="small-note mb-1">Private Key</div>
-      <div class="addr small mb-2" style="font-size:.7rem;background:#0b1626;padding:.4rem;border-radius:4px;color:#ef4444">${privKey}</div>
+      <div class="small-note mb-2">Private Key: <span class="text-success">tersimpan terenkripsi di perangkat</span></div>
+      <div class="small-note mb-2">Private Key tidak ditampilkan atau disalin otomatis dari dashboard. Gunakan cadangan vault terenkripsi untuk pemindahan perangkat.</div>
       <div class="d-flex gap-2 flex-wrap">
         <button class="btn btn-sm btn-outline-light" onclick="navigator.clipboard.writeText('${edPub}')">Salin Public Key</button>
-        <button class="btn btn-sm btn-outline-warning" onclick="navigator.clipboard.writeText('${privKey}')">Salin Private Key</button>
         <button class="btn btn-sm btn-primary" onclick="generateMagicLink()">✨ Generate Magic Link</button>
       </div>
       <div id="magicLinkResult" class="mt-2 small"></div>
@@ -476,13 +474,23 @@ function isCreator() { return vault && vault.addr === CREATOR_ADDRESS; }
 
 function downloadKeysJsonl() {
   if (!vault) return;
+  const stored = localStorage.getItem(K_VAULT);
+  if (!stored) { alert('Cadangan vault terenkripsi tidak ditemukan.'); return; }
   const edPub = hex(ed448.getPublicKey(unhex(vault.ed)));
-  const data = { address: vault.addr, publicKey: edPub, privateKey: vault.ed, createdAt: new Date().toISOString() };
-  const blob = new Blob([JSON.stringify(data, null, 2)], {type: 'application/json'});
+  // Export one JSONL record. Private material remains inside the password-encrypted vault blob.
+  const data = {
+    address: vault.addr,
+    publicKey: edPub,
+    encryptedVault: JSON.parse(stored),
+    encryption: 'Password-protected Key Vault backup',
+    createdAt: new Date().toISOString()
+  };
+  const blob = new Blob([JSON.stringify(data) + '\n'], {type: 'application/x-ndjson'});
   const a = document.createElement('a');
   a.href = URL.createObjectURL(blob);
   a.download = 'keyvault-' + vault.addr.slice(0,10) + '.jsonl';
   a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 60000);
 }
 
 function setupCreatorPanel() {
