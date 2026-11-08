@@ -494,6 +494,7 @@ async function generateMagicLink() {
   copy.onclick = () => navigator.clipboard.writeText(magicLink);
   result.append(link, note, copy);
 }
+window.generateMagicLink = generateMagicLink;
 
 function showConsultantSection() {
   const s = document.getElementById('consultantSection');
@@ -571,6 +572,7 @@ async function runCryptanalysisAI() {
   const result = document.getElementById('cryptanalysisResult');
   result.textContent = 'Asisten Cryptanalysis belum terhubung ke mesin analisis kode dan model khusus. Tidak ada analisis yang diklaim selesai.';
 }
+window.runCryptanalysisAI = runCryptanalysisAI;
 
 function loadCreatorNotifs() {
   const box = document.getElementById('creatorNotifs');
@@ -694,6 +696,7 @@ if (magicAddress && /^[a-z2-7]{26}$/.test(magicAddress)) {
     const current = localStorage.getItem(K_VAULT);
     let alreadyLocal = false;
     try { alreadyLocal = Boolean(current && JSON.parse(current).h && JSON.parse(JSON.parse(current).h).addr === magicAddress); } catch {}
+    if (!alreadyLocal && current && !confirm('Magic Link ini akan mengganti vault yang tersimpan pada perangkat ini. Pastikan kamu sudah memiliki cadangan. Lanjutkan?')) return;
     if (!alreadyLocal) {
       $('#btnAddr').disabled = true;
       $('#btnAddr').textContent = 'Mengambil vault terenkripsi...';
