@@ -472,13 +472,27 @@ function showKeyInfo() {
   showConsultantSection();
 }
 
-function generateMagicLink() {
-  const edPub = hex(ed448.getPublicKey(unhex(vault.ed)));
-  const timestamp = Date.now();
-  const magicData = btoa(JSON.stringify({ addr: vault.addr, pub: edPub, ts: timestamp }));
-  const magicLink = location.origin + '/vault?magic=' + magicData;
+async function generateMagicLink() {
   const result = document.getElementById('magicLinkResult');
-  result.innerHTML = `<div style="word-break:break-all;font-family:monospace;font-size:.65rem;background:#0b1626;padding:.4rem;border-radius:4px;color:#22c55e">${magicLink}</div><div class="small-note mt-1">Magic Link hanya bisa dibuka dengan Private Key kamu.</div>`;
+  result.textContent = 'Memastikan vault terenkripsi sudah tersinkron...';
+  if (!serverOk || !(await syncVaultToServer())) {
+    result.textContent = 'Magic Link belum dibuat: backend V3 belum terhubung atau vault belum berhasil disinkronkan.';
+    return;
+  }
+  const magicLink = location.origin + '/?magic=' + encodeURIComponent(vault.addr);
+  result.replaceChildren();
+  const link = document.createElement('a');
+  link.href = magicLink;
+  link.textContent = magicLink;
+  link.style.cssText = 'display:block;word-break:break-all;font-family:monospace;font-size:.7rem;background:#0b1626;padding:.5rem;border-radius:4px;color:#22c55e';
+  const note = document.createElement('div');
+  note.className = 'small-note mt-2';
+  note.textContent = 'Magic Link hanya menunjuk ke vault terenkripsi. Untuk membukanya, penerima harus memasukkan kata sandi Key Vault. Private Key tidak dimasukkan ke dalam link.';
+  const copy = document.createElement('button');
+  copy.className = 'btn btn-sm btn-outline-light mt-2';
+  copy.textContent = 'Salin Magic Link';
+  copy.onclick = () => navigator.clipboard.writeText(magicLink);
+  result.append(link, note, copy);
 }
 
 function showConsultantSection() {
