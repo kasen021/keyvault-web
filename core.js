@@ -25,7 +25,7 @@ const UPSTREAM = [
 
 const CORS = {
   'access-control-allow-origin': '*',
-  'access-control-allow-methods': 'GET, POST, OPTIONS',
+  'access-control-allow-methods': 'GET, POST, PUT, OPTIONS',
   'access-control-allow-headers': 'content-type, x-kv-ed, x-kv-p256, x-kv-ts, x-kv-sig'
 };
 
@@ -199,9 +199,59 @@ export async function handle(req, env, ctx) {
   if (req.method === 'OPTIONS') return plain(204);
   try {
     if (p === '/' || p === '/api/health') {
-      return json(200, { status: 'ok', nama: 'Key Vault API', versi: 2, kv: Boolean(env.KV), waktu: Date.now(), colo: (req.cf && req.cf.colo) || null });
+      return json(200, { status: 'ok', nama: 'Key Vault API', versi: 3, fitur: ['signed-api', 'encrypted-vault-sync'], kv: Boolean(env.KV), waktu: Date.now(), colo: (req.cf && req.cf.colo) || null });
     }
     if (!env.KV) throw new HttpError(500, 'Binding KV belum dipasang');
+
+    if (p === '/api/creator/status' && req.method === 'GET') {
+      const auth = await authenticate(req, u, '');
+      const creatorAddress = String(env.CREATOR_ADDRESS || '').toLowerCase();
+      return json(200, { creator: Boolean(creatorAddress && auth === creatorAddress), role: creatorAddress && auth === creatorAddress ? 'CREATOR' : 'USER' });
+    }
+
+    // Encrypted Vault Sync: server hanya menyimpan ciphertext yang dibuat browser.
+    // GET boleh tanpa autentikasi karena isi vault tetap terenkripsi dengan kata sandi pengguna.
+    if (p === '/api/vault' && req.method === 'GET') {
+      const addr = u.searchParams.get('addr') || '';
+      if (!ADDR_RE.test(addr)) throw new HttpError(400, 'Alamat Key Vault tidak valid');
+      const raw = await env.KV.get('vault:' + addr);
+      if (!raw) throw new HttpError(404, 'Vault untuk alamat ini belum tersinkron');
+      let stored;
+      try { stored = JSON.parse(raw); } catch { throw new HttpError(500, 'Data vault tersimpan rusak'); }
+      return json(200, { address: addr, vault: stored });
+    }
+
+    if (p === '/api/vault' && req.method === 'PUT') {
+      const text = await req.text();
+      if (text.length > 65536) throw new HttpError(413, 'Cadangan vault melebihi batas 64 KB');
+      const auth = await authenticate(req, u, text);
+      let payload;
+      try { payload = JSON.parse(text); } catch { throw new HttpError(400, 'Format data vault tidak valid'); }
+      const stored = payload && payload.vault;
+      if (!stored || typeof stored.h !== 'string' || typeof stored.ct !== 'string' || !/^[0-9a-f]+$/.test(stored.ct) || stored.ct.length % 2) {
+        throw new HttpError(400, 'Ciphertext vault tidak valid');
+      }
+      let header;
+      try { header = JSON.parse(stored.h); } catch { throw new HttpError(400, 'Header vault tidak valid'); }
+      if (header.addr !== auth || !Number.isInteger(header.iter) || header.iter < 100000 || header.iter > 2000000 ||
+          typeof header.salt !== 'string' || !/^[0-9a-f]{32}$/.test(header.salt) ||
+          !Array.isArray(header.layers) || header.layers.some((x) => !['serpent256', 'aria256gcm', 'cast256'].includes(x))) {
+        throw new HttpError(400, 'Identitas atau parameter enkripsi vault tidak valid');
+      }
+      const incomingUpdatedAt = Number.isSafeInteger(header.updatedAt) ? header.updatedAt : 0;
+      const existing = await env.KV.get('vault:' + auth);
+      if (existing) {
+        let prior;
+        try { prior = JSON.parse(existing); } catch { throw new HttpError(500, 'Data vault tersimpan rusak'); }
+        let priorHeader;
+        try { priorHeader = JSON.parse(prior.h); } catch { throw new HttpError(500, 'Header vault tersimpan rusak'); }
+        if (priorHeader.addr !== auth) throw new HttpError(409, 'Identitas vault tidak cocok');
+        const priorUpdatedAt = Number.isSafeInteger(priorHeader.updatedAt) ? priorHeader.updatedAt : 0;
+        if (priorUpdatedAt > incomingUpdatedAt) throw new HttpError(409, 'Salinan lokal lebih lama daripada vault server; pulihkan versi server terlebih dahulu');
+      }
+      await env.KV.put('vault:' + auth, JSON.stringify(stored));
+      return json(200, { saved: true, address: auth, encrypted: true, bytes: stored.ct.length / 2 });
+    }
 
     // DNS: /dns/<alamat>/<token>
     const m = p.match(/^\/dns\/([a-z2-7]{26})\/([0-9a-f]{32})$/);
