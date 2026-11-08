@@ -344,8 +344,8 @@ export async function handle(req, env, ctx) {
       const key = 'vault/' + auth + '/' + id;
       if (req.method === 'PUT') {
         const size = Number(req.headers.get('content-length') || 0);
-        const maxSize = 90 * 1024 * 1024;
-        if (size > maxSize) throw new HttpError(413, 'File melebihi batas 90 MB');
+        const maxSize = 95 * 1024 * 1024;
+        if (size > maxSize) throw new HttpError(413, 'File terenkripsi melebihi batas 95 MB');
         if (!req.body) throw new HttpError(400, 'Isi file kosong');
         let received = 0;
         const boundedBody = req.body.pipeThrough(new TransformStream({
