@@ -13,10 +13,8 @@
     { "src": "/ciphers.js", "dest": "/public/ciphers.js" },
     { "src": "/vaultcrypto.js", "dest": "/public/vaultcrypto.js" },
     { "src": "/consultant", "dest": "/public/consultant.html" },
-    { "src": "/api/auth", "dest": "/api/auth.js" },
     { "src": "/api/crypt-the-phone", "dest": "/api/crypt-the-phone.js" },
     { "src": "/api/hashor", "dest": "/api/hashor.js" },
-    { "src": "/api/inquiry", "dest": "/api/inquiry.js" },
-    { "src": "/api/rare-slots", "dest": "/api/rare-slots.js" }
+    { "src": "/api/inquiry", "dest": "/api/inquiry.js" }
   ]
 }
