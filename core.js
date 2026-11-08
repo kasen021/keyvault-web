@@ -344,9 +344,18 @@ export async function handle(req, env, ctx) {
       const key = 'vault/' + auth + '/' + id;
       if (req.method === 'PUT') {
         const size = Number(req.headers.get('content-length') || 0);
-        if (size > 5 * 1024 * 1024 * 1024) throw new HttpError(413, 'File melebihi batas 5 GB');
+        const maxSize = 90 * 1024 * 1024;
+        if (size > maxSize) throw new HttpError(413, 'File melebihi batas 90 MB');
         if (!req.body) throw new HttpError(400, 'Isi file kosong');
-        const saved = await env.PERSONAL_VAULT.put(key, req.body, {
+        let received = 0;
+        const boundedBody = req.body.pipeThrough(new TransformStream({
+          transform(chunk, controller) {
+            received += chunk.byteLength;
+            if (received > maxSize) throw new Error('Ukuran file melebihi batas 90 MB');
+            controller.enqueue(chunk);
+          }
+        }));
+        const saved = await env.PERSONAL_VAULT.put(key, boundedBody, {
           httpMetadata: { contentType: 'application/octet-stream' }
         });
         return json(200, { saved: true, id, etag: saved.etag });
