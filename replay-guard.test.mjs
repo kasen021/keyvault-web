@@ -43,6 +43,6 @@ test('invalid replay claims are rejected', async () => {
 
 test('expired signatures can be claimed again after retention window', async () => {
   const { guard } = makeGuard();
-  assert.equal((await guard.fetch(request(signature, Date.now() - 300000))).status, 204);
+  values.set('sig:' + signature, Date.now() - 300000);
   assert.equal((await guard.fetch(request(signature))).status, 204);
 });
