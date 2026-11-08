@@ -203,6 +203,12 @@ export async function handle(req, env, ctx) {
     }
     if (!env.KV) throw new HttpError(500, 'Binding KV belum dipasang');
 
+    if (p === '/api/creator/status' && req.method === 'GET') {
+      const auth = await authenticate(req, u, '');
+      const creatorAddress = String(env.CREATOR_ADDRESS || '').toLowerCase();
+      return json(200, { creator: Boolean(creatorAddress && auth === creatorAddress), role: creatorAddress && auth === creatorAddress ? 'CREATOR' : 'USER' });
+    }
+
     // Encrypted Vault Sync: server hanya menyimpan ciphertext yang dibuat browser.
     // GET boleh tanpa autentikasi karena isi vault tetap terenkripsi dengan kata sandi pengguna.
     if (p === '/api/vault' && req.method === 'GET') {
@@ -232,6 +238,7 @@ export async function handle(req, env, ctx) {
           !Array.isArray(header.layers) || header.layers.some((x) => !['serpent256', 'aria256gcm', 'cast256'].includes(x))) {
         throw new HttpError(400, 'Identitas atau parameter enkripsi vault tidak valid');
       }
+      const incomingUpdatedAt = Number.isSafeInteger(header.updatedAt) ? header.updatedAt : 0;
       const existing = await env.KV.get('vault:' + auth);
       if (existing) {
         let prior;
@@ -239,6 +246,8 @@ export async function handle(req, env, ctx) {
         let priorHeader;
         try { priorHeader = JSON.parse(prior.h); } catch { throw new HttpError(500, 'Header vault tersimpan rusak'); }
         if (priorHeader.addr !== auth) throw new HttpError(409, 'Identitas vault tidak cocok');
+        const priorUpdatedAt = Number.isSafeInteger(priorHeader.updatedAt) ? priorHeader.updatedAt : 0;
+        if (priorUpdatedAt > incomingUpdatedAt) throw new HttpError(409, 'Salinan lokal lebih lama daripada vault server; pulihkan versi server terlebih dahulu');
       }
       await env.KV.put('vault:' + auth, JSON.stringify(stored));
       return json(200, { saved: true, address: auth, encrypted: true, bytes: stored.ct.length / 2 });
