@@ -2,6 +2,34 @@
 
 Key Vault all-in-one berbasis website: enkripsi, hashing, tanda tangan digital, dan kombinasi kripto. Tanpa email, tanpa nomor telepon. Alamat pengguna dihasilkan dari SHA-256 + Ed448 (Goldilocks).
 
+## Key Vault V3 — encrypted vault sync
+
+- The Vercel site is the public frontend. The Cloudflare Worker (`worker.js` / `core.js`) is the API backend and requires the existing persistent KV namespace binding.
+- V3 stores only the password-encrypted vault envelope in Worker KV under `vault:<address>`. The browser encrypts the vault before upload; the server receives neither the password nor plaintext private-key material.
+- A user can restore the encrypted envelope on another device by entering the Key Vault address, then unlock it locally with the original password.
+- Magic Link is an address locator (`/?magic=<address>`), not a bearer credential. Opening it retrieves ciphertext; the user's Key Vault password is still required.
+- The API rejects a backend older than version 3 so the UI does not falsely show an old Worker as V3-ready.
+
+### Deploying the V3 backend
+
+After pulling this branch, deploy the Worker separately from Vercel:
+
+    npx wrangler deploy
+
+The existing Worker must retain its original KV namespace binding and data. Do not bind a newly created empty namespace unless you intend to migrate the old data. Check:
+
+    curl https://keyvault-web.aste53347.workers.dev/api/health
+
+The response must include `"versi":3` and `"kv":true` before cross-device sync is considered active.
+
+Set the Creator address after creating/unlocking the intended Creator Key Vault:
+
+    npx wrangler secret put CREATOR_ADDRESS
+
+Paste the exact 26-character Key Vault address when prompted. Creator access is checked by the signed backend endpoint; the old hard-coded address in frontend JavaScript has been removed.
+
+**Not yet active:** native app protection (Encrypt Your Ssstt), real-time device instrumentation (I Am In Your Phone), and Bitcoin TXID verification. The interface now reports these as unavailable instead of pretending the operation succeeded.
+
 ## Algoritma
 
 - Enkripsi: X448, RSA-2048 (hybrid), Serpent-256, ARIA-256-GCM, CAST-256 (mode GCM per chunk 4MB)
