@@ -466,8 +466,10 @@ async function uploadPersonalFile(file) {
   if (!response.ok || !result.saved) throw new Error(result.error || 'Penyimpanan file gagal.');
   vault.files = [...(vault.files || []), { id, name: file.name, size: file.size, createdAt: Date.now(), cipher: 'X448 + AES-256-GCM' }];
   await storeVault();
+  const indexSynced = serverOk && await syncVaultToServer();
   bump('enc');
   renderPersonalVault();
+  return indexSynced;
 }
 async function retrievePersonalFile(item) {
   if (!serverOk || personalVaultBusy) return;
@@ -527,11 +529,14 @@ document.getElementById('personal-vault-input')?.addEventListener('change', asyn
   personalVaultBusy = true;
   updateUploadWindow();
   try {
+    let indexSynced = true;
     for (let index = 0; index < files.length; index++) {
       personalVaultStatus('Mengenkripsi dan mengunggah ' + (index + 1) + '/' + files.length + ': ' + files[index].name);
-      await uploadPersonalFile(files[index]);
+      indexSynced = await uploadPersonalFile(files[index]) && indexSynced;
     }
-    personalVaultStatus(files.length + ' file berhasil dienkripsi dan disimpan.');
+    personalVaultStatus(indexSynced
+      ? files.length + ' file berhasil dienkripsi dan disimpan.'
+      : 'File tersimpan terenkripsi, tetapi sinkronisasi daftar file tertunda. Vault lokal tetap menyimpan daftar file; sambungkan kembali backend untuk sinkronisasi.');
   } catch (error) {
     personalVaultStatus(error.message || 'Unggah gagal.', true);
   } finally {
