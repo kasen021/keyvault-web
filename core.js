@@ -25,7 +25,7 @@ const UPSTREAM = [
 
 const CORS = {
   'access-control-allow-origin': '*',
-  'access-control-allow-methods': 'GET, POST, PUT, OPTIONS',
+  'access-control-allow-methods': 'GET, POST, PUT, DELETE, OPTIONS',
   'access-control-allow-headers': 'content-type, x-kv-ed, x-kv-p256, x-kv-ts, x-kv-sig'
 };
 
