@@ -554,15 +554,8 @@ function setupCreatorPanel() {
 }
 
 async function runCryptanalysisAI() {
-  const input = document.getElementById('cryptanalysisInput').value.trim();
-  if (!input) return;
   const result = document.getElementById('cryptanalysisResult');
-  result.innerHTML = '<span style="color:#a855f7">AI menganalisis...</span>';
-  try {
-    const res = await fetch('/api/crypt-the-phone', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({device: input})});
-    const d = await res.json();
-    result.innerHTML = '<div style="color:#e8e8f0">' + (d.summary || '') + '</div>';
-  } catch(e) { result.innerHTML = '<span style="color:#ef4444">Gagal.</span>'; }
+  result.textContent = 'Asisten Cryptanalysis belum terhubung ke mesin analisis kode dan model khusus. Tidak ada analisis yang diklaim selesai.';
 }
 
 function loadCreatorNotifs() {
@@ -678,3 +671,22 @@ $('#restore').onchange = async (e) => {
   location.reload();
 };
 $('#btnAddr').textContent = localStorage.getItem(K_VAULT) || localStorage.getItem(K_LEGACY) ? 'Buka Key Vault' : 'Dapatkan Alamat';
+
+// Magic Link is a public locator only; the encrypted vault still requires the owner's password.
+const magicAddress = new URLSearchParams(location.search).get('magic');
+if (magicAddress && /^[a-z2-7]{26}$/.test(magicAddress)) {
+  $('#btnAddr').textContent = 'Pulihkan melalui Magic Link';
+  $('#btnAddr').onclick = async () => {
+    const current = localStorage.getItem(K_VAULT);
+    let alreadyLocal = false;
+    try { alreadyLocal = Boolean(current && JSON.parse(current).h && JSON.parse(JSON.parse(current).h).addr === magicAddress); } catch {}
+    if (!alreadyLocal) {
+      $('#btnAddr').disabled = true;
+      $('#btnAddr').textContent = 'Mengambil vault terenkripsi...';
+      try { await fetchRemoteVault(magicAddress); }
+      catch (error) { $('#btnAddr').disabled = false; $('#btnAddr').textContent = 'Pulihkan melalui Magic Link'; alert(error.message || 'Magic Link tidak dapat dipulihkan.'); return; }
+    }
+    history.replaceState(null, '', location.pathname);
+    location.reload();
+  };
+}
