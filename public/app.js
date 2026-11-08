@@ -453,8 +453,15 @@ async function uploadPersonalFile(file) {
   const path = '/api/personal-vault/' + id;
   const headers = await authHeaders('PUT', path, '');
   headers['content-type'] = 'application/octet-stream';
-  const body = await encryptedFileStream(file);
-  const response = await fetch(base + path, { method: 'PUT', headers, body, duplex: 'half' });
+  let response;
+  try {
+    const body = await encryptedFileStream(file);
+    response = await fetch(base + path, { method: 'PUT', headers, body, duplex: 'half' });
+  } catch (error) {
+    if (!(error instanceof TypeError)) throw error;
+    const buffered = await new Response(await encryptedFileStream(file)).blob();
+    response = await fetch(base + path, { method: 'PUT', headers, body: buffered });
+  }
   const result = await response.json().catch(() => ({}));
   if (!response.ok || !result.saved) throw new Error(result.error || 'Penyimpanan file gagal.');
   vault.files = [...(vault.files || []), { id, name: file.name, size: file.size, createdAt: Date.now(), cipher: 'X448 + AES-256-GCM' }];
