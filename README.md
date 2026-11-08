@@ -12,11 +12,11 @@ Key Vault all-in-one berbasis website: enkripsi, hashing, tanda tangan digital, 
 
 ### Deploying the V3 backend
 
-After pulling this branch, deploy the Worker separately from Vercel:
+After pulling this branch, deploy the Worker separately from Vercel. First obtain the ID of the **existing** KV namespace already used by production and put that exact ID in the `[[kv_namespaces]]` entry in `wrangler.toml`; do not create or bind a new empty namespace because that would make old accounts and ledger history appear missing. Then deploy:
 
     npx wrangler deploy
 
-The existing Worker must retain its original KV namespace binding and data. Do not bind a newly created empty namespace unless you intend to migrate the old data. Check:
+Check:
 
     curl https://keyvault-web.aste53347.workers.dev/api/health
 
