@@ -340,7 +340,7 @@ async function fetchRemoteVault(address) {
   return true;
 }
 
-const PERSONAL_VAULT_LIMIT = 5 * 1024 * 1024 * 1024;
+const PERSONAL_VAULT_LIMIT = 90 * 1024 * 1024;
 let uploadWindowUntil = 0;
 let uploadWindowTimer = null;
 let personalVaultBusy = false;
@@ -447,7 +447,7 @@ async function encryptedFileStream(file) {
   });
 }
 async function uploadPersonalFile(file) {
-  if (file.size > PERSONAL_VAULT_LIMIT) throw new Error('Ukuran file melewati batas 5 GB.');
+  if (file.size > PERSONAL_VAULT_LIMIT) throw new Error('Ukuran file melewati batas 90 MB untuk satu unggahan.');
   if (!serverOk) throw new Error('Backend belum terhubung. File belum diunggah.');
   const id = hex(crypto.getRandomValues(new Uint8Array(16)));
   const path = '/api/personal-vault/' + id;
@@ -507,6 +507,7 @@ async function deletePersonalFile(item) {
     updateUploadWindow();
   }
 }
+window.openPersonalVaultWindow = openPersonalVaultWindow;
 document.getElementById('personal-vault-input')?.addEventListener('change', async event => {
   const files = Array.from(event.target.files || []);
   event.target.value = '';
