@@ -62,8 +62,7 @@ async function readText(req) {
    Setiap permintaan yang mengubah data atau membaca data pribadi ditandatangani ECDSA P-256 oleh pemilik alamat:
    pesan = KV1 \n host \n METHOD \n path+query \n timestamp \n SHA-256(body)
    Server memeriksa: alamat cocok dengan hash kunci publik, jam dalam jendela 120 detik, tanda tangan sah, bukan permintaan ulang. */
-const seen = new Map();
-async function authenticate(req, u, bodyText) {
+async function authenticate(req, u, bodyText, env) {
   const ed = req.headers.get('x-kv-ed') || '';
   const p256 = req.headers.get('x-kv-p256') || '';
   const sig = req.headers.get('x-kv-sig') || '';
@@ -71,14 +70,25 @@ async function authenticate(req, u, bodyText) {
   if (!/^[0-9a-f]{114}$/.test(ed) || !/^[0-9a-f]{130}$/.test(p256) || !/^[0-9a-f]{128}$/.test(sig) || !Number.isFinite(ts)) throw new HttpError(401, 'Tanda tangan tidak ada atau formatnya salah');
   const now = Date.now();
   if (Math.abs(now - ts) > AUTH_WINDOW_MS) throw new HttpError(401, 'Jam perangkat tidak sinkron dengan server');
-  if (seen.has(sig)) throw new HttpError(401, 'Permintaan ulang ditolak');
   const addr = b32(await sha256(unhex(ed + p256))).slice(0, 26);
   const key = await crypto.subtle.importKey('raw', unhex(p256), { name: 'ECDSA', namedCurve: 'P-256' }, false, ['verify']);
   const msg = enc.encode(`KV1\n${u.host}\n${req.method}\n${u.pathname}${u.search}\n${ts}\n${await sha256Hex(bodyText)}`);
   const ok = await crypto.subtle.verify({ name: 'ECDSA', hash: 'SHA-256' }, key, unhex(sig), msg);
   if (!ok) throw new HttpError(401, 'Tanda tangan tidak sah');
-  seen.set(sig, now);
-  if (seen.size > 2000) for (const [k, t] of seen) if (now - t > AUTH_WINDOW_MS * 2) seen.delete(k);
+  if (!env.REPLAY_GUARD) throw new HttpError(503, 'Proteksi replay belum dikonfigurasi');
+  const guard = env.REPLAY_GUARD.get(env.REPLAY_GUARD.idFromName(addr));
+  let claim;
+  try {
+    claim = await guard.fetch('https://replay/claim', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ sig, ts })
+    });
+  } catch {
+    throw new HttpError(503, 'Proteksi replay tidak tersedia; permintaan ditolak');
+  }
+  if (claim.status === 409) throw new HttpError(401, 'Permintaan ulang ditolak');
+  if (!claim.ok) throw new HttpError(503, 'Proteksi replay gagal; permintaan ditolak');
   return addr;
 }
 
@@ -204,7 +214,7 @@ export async function handle(req, env, ctx) {
     if (!env.KV) throw new HttpError(500, 'Binding KV belum dipasang');
 
     if (p === '/api/creator/status' && req.method === 'GET') {
-      const auth = await authenticate(req, u, '');
+      const auth = await authenticate(req, u, '', env);
       const creatorAddress = String(env.CREATOR_ADDRESS || '').toLowerCase();
       return json(200, { creator: Boolean(creatorAddress && auth === creatorAddress), role: creatorAddress && auth === creatorAddress ? 'CREATOR' : 'USER' });
     }
@@ -224,7 +234,7 @@ export async function handle(req, env, ctx) {
     if (p === '/api/vault' && req.method === 'PUT') {
       const text = await req.text();
       if (text.length > 65536) throw new HttpError(413, 'Cadangan vault melebihi batas 64 KB');
-      const auth = await authenticate(req, u, text);
+      const auth = await authenticate(req, u, text, env);
       let payload;
       try { payload = JSON.parse(text); } catch { throw new HttpError(400, 'Format data vault tidak valid'); }
       const stored = payload && payload.vault;
@@ -314,7 +324,7 @@ export async function handle(req, env, ctx) {
     }
 
     if (p === '/api/stats' && req.method === 'GET') {
-      const auth = await authenticate(req, u, '');
+      const auth = await authenticate(req, u, '', env);
       if ((u.searchParams.get('addr') || '') !== auth) throw new HttpError(403, 'Alamat tidak sesuai dengan tanda tangan');
       const stub = metricsStub(env, auth);
       if (!stub) return json(200, { tersedia: false });
@@ -324,7 +334,7 @@ export async function handle(req, env, ctx) {
 
     if (p === '/api/personal-vault' && req.method === 'GET') {
       if (!env.PERSONAL_VAULT) throw new HttpError(503, 'Penyimpanan file belum dikonfigurasi');
-      const auth = await authenticate(req, u, '');
+      const auth = await authenticate(req, u, '', env);
       const result = await env.PERSONAL_VAULT.list({ prefix: 'vault/' + auth + '/', limit: 100 });
       return json(200, {
         files: result.objects.map((item) => ({
@@ -338,7 +348,7 @@ export async function handle(req, env, ctx) {
 
     if (p.startsWith('/api/personal-vault/') && ['PUT', 'GET', 'DELETE'].includes(req.method)) {
       if (!env.PERSONAL_VAULT) throw new HttpError(503, 'Penyimpanan file belum dikonfigurasi');
-      const auth = await authenticate(req, u, '');
+      const auth = await authenticate(req, u, '', env);
       const id = p.slice('/api/personal-vault/'.length);
       if (!/^[0-9a-f]{32}$/.test(id)) throw new HttpError(400, 'ID file tidak valid');
       const key = 'vault/' + auth + '/' + id;
@@ -390,7 +400,7 @@ export async function handle(req, env, ctx) {
     }
 
     if (p === '/api/mode' && req.method === 'GET') {
-      const auth = await authenticate(req, u, '');
+      const auth = await authenticate(req, u, '', env);
       if ((u.searchParams.get('addr') || '') !== auth) throw new HttpError(403, 'Alamat tidak sesuai dengan tanda tangan');
       const raw = await env.KV.get('modes:' + auth);
       return json(200, { active: raw ? JSON.parse(raw) : [] });
@@ -398,7 +408,7 @@ export async function handle(req, env, ctx) {
 
     if (p === '/api/mode' && req.method === 'POST') {
       const text = await readText(req);
-      const auth = await authenticate(req, u, text);
+      const auth = await authenticate(req, u, text, env);
       const { addr, algo, on, dohHash } = JSON.parse(text);
       if (addr !== auth) throw new HttpError(403, 'Alamat tidak sesuai dengan tanda tangan');
       if (!ALGOS.has(algo)) throw new HttpError(400, 'Algoritma tidak dikenal');
@@ -414,7 +424,7 @@ export async function handle(req, env, ctx) {
 
     if (p === '/api/ledger' && req.method === 'POST') {
       const text = await readText(req);
-      const auth = await authenticate(req, u, text);
+      const auth = await authenticate(req, u, text, env);
       const { file, algo, a, b } = JSON.parse(text);
       const r = await appendBlock(env, auth, file, algo || 'sha256', a, b);
       return json(r.code, r.code === 200 ? { block: r.block } : { error: r.error });
