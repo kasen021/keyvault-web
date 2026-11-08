@@ -30,6 +30,20 @@ Paste the exact 26-character Key Vault address when prompted. Creator access is 
 
 **Not yet active:** native app protection (Encrypt Your Ssstt), real-time device instrumentation (I Am In Your Phone), and Bitcoin TXID verification. The interface now reports these as unavailable instead of pretending the operation succeeded.
 
+## Personal Vault — encrypted file storage
+
+- Files of any format are encrypted in the browser with an X448-wrapped AES-256-GCM file key before upload.
+- The upload session opens for 25 seconds. It controls when file selection can begin; an upload already started continues until it finishes. Open a new session for another upload batch.
+- Each file is streamed in 4 MiB encrypted chunks. The Worker streams ciphertext into Cloudflare R2 and enforces a 90 MB per-file request limit.
+- R2 object keys contain only the account address and random file ID. Filenames and the file list are kept inside the user's password-encrypted vault envelope in KV.
+- The file contents are never sent to the Worker in plaintext. Decryption happens in the browser after the ciphertext is fetched.
+- R2 is a separate Cloudflare binding. Create the bucket once, then deploy the Worker:
+
+      npx wrangler r2 bucket create keyvault-personal-vault
+      npx wrangler deploy
+
+  The existing KV namespace ID must remain unchanged. R2 storage and operation charges are governed by the Cloudflare account.
+
 ## Algoritma
 
 - Enkripsi: X448, RSA-2048 (hybrid), Serpent-256, ARIA-256-GCM, CAST-256 (mode GCM per chunk 4MB)
