@@ -17,3 +17,7 @@ class_name = "Metrics"
 [[migrations]]
 tag = "v1"
 new_sqlite_classes = ["Metrics"]
+
+[[migrations]]
+tag = "v2"
+new_sqlite_classes = ["ReplayGuard"]
