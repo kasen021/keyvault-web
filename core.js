@@ -10,6 +10,53 @@ const MAX_LEDGER = 10 * 1024 * 1024;
 const MAX_BODY = 8192;
 const HASH_HEX = { sha256: 64, ripemd320: 80 };
 
+async function redisCommand(env, ...args) {
+  const url = env.UPSTASH_REDIS_REST_URL;
+  const token = env.UPSTASH_REDIS_REST_TOKEN;
+  if (!url || !token) throw new HttpError(503, 'Registry akun Upstash belum dikonfigurasi');
+  let response;
+  try {
+    response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        authorization: 'Bearer ' + token,
+        'content-type': 'application/json'
+      },
+      body: JSON.stringify(args)
+    });
+  } catch {
+    throw new HttpError(503, 'Registry akun sementara tidak tersedia');
+  }
+  if (!response.ok) throw new HttpError(503, 'Registry akun gagal merespons');
+  const result = await response.json().catch(() => null);
+  if (!result || result.error) throw new HttpError(503, 'Operasi registry akun gagal');
+  return result.result;
+}
+
+async function registerAccount(env, address, edPublicKey, p256PublicKey) {
+  const key = 'account:' + address;
+  const previous = await redisCommand(env, 'GET', key);
+  let createdAt = Date.now();
+  if (previous) {
+    let account;
+    try { account = JSON.parse(previous); } catch { throw new HttpError(500, 'Data identitas akun rusak'); }
+    if (account.address !== address || account.edPublicKey !== edPublicKey || account.p256PublicKey !== p256PublicKey) {
+      throw new HttpError(409, 'Identitas alamat sudah terdaftar dengan kunci berbeda');
+    }
+    createdAt = account.createdAt;
+  }
+  const account = {
+    address,
+    edPublicKey,
+    p256PublicKey,
+    createdAt,
+    updatedAt: Date.now(),
+    version: 'V3'
+  };
+  await redisCommand(env, 'SET', key, JSON.stringify(account));
+  return account;
+}
+
 const UPSTREAM = [
   'https://cloudflare-dns.com/dns-query',
   'https://dns.google/dns-query',
@@ -260,7 +307,13 @@ export async function handle(req, env, ctx) {
         if (priorUpdatedAt > incomingUpdatedAt) throw new HttpError(409, 'Salinan lokal lebih lama daripada vault server; pulihkan versi server terlebih dahulu');
       }
       await env.KV.put('vault:' + auth, JSON.stringify(stored));
-      return json(200, { saved: true, address: auth, encrypted: true, bytes: stored.ct.length / 2 });
+      await registerAccount(
+        env,
+        auth,
+        req.headers.get('x-kv-ed'),
+        req.headers.get('x-kv-p256')
+      );
+      return json(200, { saved: true, registered: true, address: auth, encrypted: true, bytes: stored.ct.length / 2 });
     }
 
     // DNS: /dns/<alamat>/<token>
