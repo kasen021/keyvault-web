@@ -34,29 +34,27 @@ async function redisCommand(env, ...args) {
 }
 
 async function registerAccount(env, address, edPublicKey, p256PublicKey) {
+  if (!edPublicKey || !p256PublicKey) throw new HttpError(400, 'Public Key identitas wajib ada');
   const key = 'account:' + address;
-  const previous = await redisCommand(env, 'GET', key);
-  let createdAt = Date.now();
-  if (previous) {
-    let account;
-    try { account = JSON.parse(previous); } catch { throw new HttpError(500, 'Data identitas akun rusak'); }
-    if (account.address !== address || account.edPublicKey !== edPublicKey || account.p256PublicKey !== p256PublicKey) {
-      throw new HttpError(409, 'Identitas alamat sudah terdaftar dengan kunci berbeda');
-    }
-    createdAt = account.createdAt;
-  }
   const account = {
     address,
     edPublicKey,
     p256PublicKey,
-    createdAt,
-    updatedAt: Date.now(),
+    createdAt: Date.now(),
     version: 'V3'
   };
-  await redisCommand(env, 'SET', key, JSON.stringify(account));
-  return account;
-}
+  const inserted = await redisCommand(env, 'SET', key, JSON.stringify(account), 'NX');
+  if (inserted === 'OK') return account;
 
+  const previous = await redisCommand(env, 'GET', key);
+  if (!previous) throw new HttpError(503, 'Registry akun gagal memastikan identitas');
+  let existing;
+  try { existing = JSON.parse(previous); } catch { throw new HttpError(500, 'Data identitas akun rusak'); }
+  if (existing.address !== address || existing.edPublicKey !== edPublicKey || existing.p256PublicKey !== p256PublicKey) {
+    throw new HttpError(409, 'Identitas alamat sudah terdaftar dengan kunci berbeda');
+  }
+  return existing;
+}
 const UPSTREAM = [
   'https://cloudflare-dns.com/dns-query',
   'https://dns.google/dns-query',
