@@ -1,20 +1,63 @@
 {
   "version": 2,
   "builds": [
-    { "src": "api/*.js", "use": "@vercel/node" },
-    { "src": "public/**", "use": "@vercel/static" }
+    {
+      "src": "api/*.js",
+      "use": "@vercel/node"
+    },
+    {
+      "src": "public/**",
+      "use": "@vercel/static"
+    }
   ],
   "routes": [
-    { "src": "/", "dest": "/public/index.html" },
-    { "src": "/secure.html", "dest": "/public/secure.html" },
-    { "src": "/secure.css", "dest": "/public/secure.css" },
-    { "src": "/secure.js", "dest": "/public/secure.js" },
-    { "src": "/app.js", "dest": "/public/app.js" },
-    { "src": "/ciphers.js", "dest": "/public/ciphers.js" },
-    { "src": "/vaultcrypto.js", "dest": "/public/vaultcrypto.js" },
-    { "src": "/consultant", "dest": "/public/consultant.html" },
-    { "src": "/api/crypt-the-phone", "dest": "/api/crypt-the-phone.js" },
-    { "src": "/api/hashor", "dest": "/api/hashor.js" },
-    { "src": "/api/inquiry", "dest": "/api/inquiry.js" }
+    {
+      "src": "/api/auth",
+      "dest": "/api/auth.js"
+    },
+    {
+      "src": "/",
+      "dest": "/public/index.html"
+    },
+    {
+      "src": "/secure.html",
+      "dest": "/public/secure.html"
+    },
+    {
+      "src": "/secure.css",
+      "dest": "/public/secure.css"
+    },
+    {
+      "src": "/secure.js",
+      "dest": "/public/secure.js"
+    },
+    {
+      "src": "/app.js",
+      "dest": "/public/app.js"
+    },
+    {
+      "src": "/ciphers.js",
+      "dest": "/public/ciphers.js"
+    },
+    {
+      "src": "/vaultcrypto.js",
+      "dest": "/public/vaultcrypto.js"
+    },
+    {
+      "src": "/consultant",
+      "dest": "/public/consultant.html"
+    },
+    {
+      "src": "/api/crypt-the-phone",
+      "dest": "/api/crypt-the-phone.js"
+    },
+    {
+      "src": "/api/hashor",
+      "dest": "/api/hashor.js"
+    },
+    {
+      "src": "/api/inquiry",
+      "dest": "/api/inquiry.js"
+    }
   ]
 }
