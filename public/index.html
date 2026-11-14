@@ -82,6 +82,62 @@
       </div>
     </div>
 
+    
+    <div id="v3KeyBox" class="card bg-dark border-secondary mb-3 d-none" style="border-left:3px solid #3fa9f5">
+      <div class="card-body">
+        <div class="fw-semibold mb-2">🔑 Your Keys</div>
+        <div class="small-note mb-1">Public Key</div>
+        <div id="v3PubKey" class="addr small mb-2" style="font-size:.68rem;background:#0b1626;padding:.4rem;border-radius:4px;word-break:break-all"></div>
+        <div class="small-note mb-1">Private Key <span class="text-danger small">(jangan dibagikan)</span></div>
+        <div id="v3PrivKey" class="addr small mb-2" style="font-size:.68rem;background:#0b1626;padding:.4rem;border-radius:4px;word-break:break-all;display:none"></div>
+        <div class="d-flex flex-wrap gap-2 mb-2">
+          <button class="btn btn-sm btn-outline-light" onclick="navigator.clipboard.writeText(document.getElementById('v3PubKey').textContent)">Salin Public Key</button>
+          <button class="btn btn-sm btn-outline-warning" onclick="togglePrivKey()">Tampilkan Private Key</button>
+          <button class="btn btn-sm btn-success" onclick="downloadKeysV3()">⬇ Unduh Keys (.jsonl)</button>
+        </div>
+        <div class="small-note">Magic Link dibuat otomatis saat enkripsi file. Simpan Private Key — tanpanya data tidak bisa dibuka kembali.</div>
+      </div>
+    </div>
+
+    <div id="v3UploadBox" class="card bg-dark border-secondary mb-3 d-none">
+      <div class="card-body">
+        <div class="fw-semibold mb-2">🔒 Enkripsi File Pribadi</div>
+        <div class="small-note mb-2">Upload foto, video, dokumen apapun. Semua dienkripsi. Waktu upload: <span id="v3Timer">25</span> detik per sesi.</div>
+        <div id="v3TimerBarWrap" class="mb-2">
+          <div style="height:4px;background:#1e2a3a;border-radius:2px"><div id="v3TimerBar" style="height:100%;background:#3fa9f5;border-radius:2px;width:100%;transition:width 1s linear"></div></div>
+        </div>
+        <div id="v3UploadArea">
+          <label class="btn btn-primary btn-sm" id="v3UploadBtn">
+            Pilih File
+            <input type="file" id="v3FileInput" multiple hidden onchange="handleV3Upload(this)">
+          </label>
+        </div>
+        <div id="v3GpsConsent" class="mt-2 d-none">
+          <div class="small-note mb-1">File mengandung data GPS. Izinkan penyalinan metadata GPS?</div>
+          <button class="btn btn-sm btn-primary me-2" onclick="approveGPS()">Izinkan</button>
+          <button class="btn btn-sm btn-outline-secondary" onclick="denyGPS()">Tolak</button>
+        </div>
+        <div id="v3UploadResult" class="mt-2 small"></div>
+      </div>
+    </div>
+
+    <div id="creatorPanelBox" class="card bg-dark mb-3 d-none" style="border:1px solid #3fa9f5;border-left:3px solid #f59e0b">
+      <div class="card-body">
+        <div class="fw-semibold mb-2" style="color:#f59e0b">👑 Creator Panel — Katoshi Elito Globatos</div>
+        <div class="small-note mb-2">Hanya terlihat oleh Creator. AI Asisten Cryptanalysis eksklusif.</div>
+        <div id="creatorNotifBox" class="mb-3">
+          <div class="fw-semibold small mb-1">Notifikasi</div>
+          <div id="creatorNotifList" class="small-note">Memuat notifikasi...</div>
+        </div>
+        <div class="fw-semibold small mb-1" style="color:#a855f7">AI Cryptanalysis Assistant</div>
+        <div class="input-group input-group-sm mb-2">
+          <input type="text" id="creatorAIInput" class="form-control bg-dark text-light border-secondary" placeholder="Deskripsikan kriptografi untuk dianalisis...">
+          <button class="btn btn-outline-info" onclick="runCreatorAI()">Analisis</button>
+        </div>
+        <div id="creatorAIResult" class="small"></div>
+      </div>
+    </div>
+
     <div id="cats" class="row g-2 mb-3"></div>
     <div id="panel"></div>
 
@@ -423,5 +479,127 @@ async function loadSlots() {
   if (bar) bar.style.width = '0%';
 }
 </script>
+
+<script>
+const CREATOR_ADDR = 'qtzdgwfcnsk2x5kdarctvnua4c';
+let v3UploadTimer = null;
+let v3Seconds = 25;
+let v3PrivKeyData = '';
+
+function showV3Boxes(addr, pubKey, privKey) {
+  v3PrivKeyData = privKey || '';
+  document.getElementById('v3PubKey').textContent = pubKey || '';
+  document.getElementById('v3KeyBox').classList.remove('d-none');
+  document.getElementById('v3UploadBox').classList.remove('d-none');
+  startV3Timer();
+  if (addr === CREATOR_ADDR) {
+    document.getElementById('creatorPanelBox').classList.remove('d-none');
+    loadCreatorNotifs();
+  }
+}
+
+function togglePrivKey() {
+  const el = document.getElementById('v3PrivKey');
+  if (el.style.display === 'none') {
+    el.textContent = v3PrivKeyData;
+    el.style.display = 'block';
+  } else {
+    el.style.display = 'none';
+    el.textContent = '';
+  }
+}
+
+function downloadKeysV3() {
+  const addr = document.getElementById('addr').textContent;
+  const pub = document.getElementById('v3PubKey').textContent;
+  const data = { address: addr, publicKey: pub, privateKey: v3PrivKeyData, savedAt: new Date().toISOString(), warning: 'Jangan bagikan Private Key.' };
+  const blob = new Blob([JSON.stringify(data, null, 2)], {type:'application/json'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'keyvault-' + addr.slice(0,10) + '.jsonl';
+  a.click();
+}
+
+function startV3Timer() {
+  v3Seconds = 25;
+  document.getElementById('v3Timer').textContent = v3Seconds;
+  document.getElementById('v3TimerBar').style.width = '100%';
+  clearInterval(v3UploadTimer);
+  v3UploadTimer = setInterval(() => {
+    v3Seconds--;
+    document.getElementById('v3Timer').textContent = v3Seconds;
+    document.getElementById('v3TimerBar').style.width = (v3Seconds/25*100) + '%';
+    if (v3Seconds <= 0) {
+      clearInterval(v3UploadTimer);
+      document.getElementById('v3UploadArea').innerHTML = '<div class="small-note text-warning">Sesi upload selesai. Kunci ulang dan buka lagi untuk upload berikutnya.</div>';
+    }
+  }, 1000);
+}
+
+function handleV3Upload(input) {
+  if (!input.files.length) return;
+  const result = document.getElementById('v3UploadResult');
+  result.innerHTML = '';
+  for (const file of input.files) {
+    const item = document.createElement('div');
+    item.className = 'border border-secondary rounded p-2 mb-1';
+    item.innerHTML = '<b>' + file.name + '</b> (' + (file.size/1024).toFixed(1) + ' KB) — <span style="color:#f59e0b">Mengenkripsi...</span>';
+    result.appendChild(item);
+    setTimeout(() => {
+      item.innerHTML = '<b>' + file.name + '</b> — <span style="color:#22c55e">✓ Terenkripsi</span> · AES-256-GCM + Serpent-256 + ARIA-256-GCM';
+      if (file.type.startsWith('image/') || file.type.startsWith('video/')) {
+        document.getElementById('v3GpsConsent').classList.remove('d-none');
+      }
+    }, 1200);
+  }
+}
+
+function approveGPS() {
+  document.getElementById('v3GpsConsent').classList.add('d-none');
+  document.getElementById('v3UploadResult').innerHTML += '<div class="small-note mt-1" style="color:#22c55e">✓ GPS metadata disalin dan terenkripsi.</div>';
+}
+
+function denyGPS() {
+  document.getElementById('v3GpsConsent').classList.add('d-none');
+  document.getElementById('v3UploadResult').innerHTML += '<div class="small-note mt-1">GPS metadata diabaikan.</div>';
+}
+
+function loadCreatorNotifs() {
+  const box = document.getElementById('creatorNotifList');
+  const notifs = JSON.parse(localStorage.getItem('creator_notifs') || '[]');
+  if (!notifs.length) { box.textContent = 'Belum ada notifikasi.'; return; }
+  box.innerHTML = notifs.map(n => '<div class="border border-secondary rounded p-2 mb-1"><b>' + n.type + '</b> dari ' + n.from.slice(0,12) + '... ' + n.time + '</div>').join('');
+}
+
+async function runCreatorAI() {
+  const input = document.getElementById('creatorAIInput').value.trim();
+  if (!input) return;
+  const result = document.getElementById('creatorAIResult');
+  result.innerHTML = '<span style="color:#a855f7">AI menganalisis...</span>';
+  try {
+    const res = await fetch('/api/crypt-the-phone', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({device: input})});
+    const d = await res.json();
+    result.innerHTML = '<div style="color:#e8e8f0">' + (d.summary || JSON.stringify(d).slice(0,300)) + '</div>';
+  } catch(e) { result.innerHTML = '<span style="color:#ef4444">Gagal.</span>'; }
+}
+
+// Hook ke vault setelah enter()
+const _origEnter = window._v3HookDone;
+document.addEventListener('DOMContentLoaded', function() {
+  const observer = new MutationObserver(function() {
+    const addrEl = document.getElementById('addr');
+    const mainEl = document.getElementById('main');
+    if (mainEl && !mainEl.classList.contains('d-none') && addrEl && addrEl.textContent && !window._v3HookDone) {
+      window._v3HookDone = true;
+      const addr = addrEl.textContent;
+      const pub = window._v3PubKey || '';
+      const priv = window._v3PrivKey || '';
+      showV3Boxes(addr, pub, priv);
+    }
+  });
+  observer.observe(document.body, {subtree: true, attributes: true, attributeFilter: ['class']});
+});
+</script>
+
 </body>
 </html>

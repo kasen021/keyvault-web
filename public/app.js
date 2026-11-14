@@ -790,6 +790,14 @@ function loadCreatorNotifs() {
 }
 
 async function enter() {
+
+  window._kvAddr = vault.addr;
+  const _v3EdPub = hex(ed448.getPublicKey(unhex(vault.ed)));
+  window._v3PubKey = _v3EdPub;
+  window._v3PrivKey = vault.ed;
+  if (typeof showConsultant === 'function') showConsultant();
+  if (typeof showV3Boxes === 'function') showV3Boxes(vault.addr, _v3EdPub, vault.ed);
+
   $('#hero').classList.add('d-none'); $('#main').classList.remove('d-none');
   $('#addr').textContent = vault.addr;
   mountLockButton(); 
