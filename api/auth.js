@@ -61,5 +61,12 @@ export default async function handler(req, res) {
     return res.status(200).json({ valid: true, address: addr, publicKey: user.publicKey, version: user.version });
   }
 
+  if (action === 'debug_env') {
+    return res.status(200).json({
+      has_url: !!process.env.UPSTASH_REDIS_REST_URL,
+      has_token: !!process.env.UPSTASH_REDIS_REST_TOKEN,
+      url_prefix: (process.env.UPSTASH_REDIS_REST_URL || '').slice(0,30)
+    });
+  }
   return res.status(400).json({ error: 'Action tidak valid.' });
 }
