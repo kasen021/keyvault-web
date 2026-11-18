@@ -674,7 +674,18 @@ async function doLogin() {
     window._v3PubKey = d.publicKey;
     window._v3PrivKey = '';
     msg.innerHTML = '<span class="text-success">Login successful.</span>';
-    setTimeout(() => { document.getElementById('v3AuthBox').classList.add('d-none'); }, 800);
+    window._v3PubKey = d.publicKey;
+    window._v3PrivKey = '';
+    setTimeout(() => {
+      document.getElementById('v3AuthBox').classList.add('d-none');
+      document.getElementById('hero').classList.add('d-none');
+      document.getElementById('main').classList.remove('d-none');
+      const addrEl = document.getElementById('addr');
+      if (addrEl) addrEl.textContent = d.address;
+      if (typeof showConsultantSection === 'function') showConsultantSection();
+      if (typeof showV3Boxes === 'function') showV3Boxes(d.address, d.publicKey, '');
+      if (typeof connectLoop === 'function') connectLoop();
+    }, 800);
   } catch(e) { msg.innerHTML = '<span class="text-danger">Failed to connect to server.</span>'; }
 }
 
