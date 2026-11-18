@@ -876,7 +876,7 @@ function showRemoteAddressForm(previousBox) {
   $('#btnAddr').after(box); address.focus();
 }
 
-$('#btnAddr').onclick = () => {
+$('#btnAddr').onclick = () => { const box = document.getElementById('v3AuthBox'); if (box) { box.classList.toggle('d-none'); return; }
   if (vault) return enter();
   if (localStorage.getItem(K_VAULT)) return showPassForm({ title: 'Buka Key Vault', button: 'Buka', onSubmit: async (p) => { await unlockVault(p); await enter(); } });
   if (localStorage.getItem(K_LEGACY)) return showPassForm({ title: 'Amankan vault lama dengan kata sandi', confirm: true, button: 'Amankan', onSubmit: async (p) => { await migrateLegacy(p); await enter(); } });
