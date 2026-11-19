@@ -99,12 +99,12 @@
         <div class="fw-semibold mb-1">Personal Vault</div>
         <div class="small-note mb-3">File dienkripsi di perangkat dengan X448 dan AES-256-GCM sebelum dikirim. Server menyimpan ciphertext; nama file dan daftar file tersimpan di vault terenkripsi.</div>
         <div class="d-flex flex-wrap align-items-center gap-2">
-          <button id="personal-vault-open" class="btn btn-sm btn-primary" type="button" onclick="openPersonalVaultWindow()">Buka sesi unggah · 25 detik</button>
-          <span id="personal-vault-timer" class="small text-secondary">Sesi unggah tertutup</span>
+          <button id="personal-vault-open" class="btn btn-sm btn-primary" type="button" onclick="openPersonalVaultWindow()">Open upload session · 25 detik</button>
+          <span id="personal-vault-timer" class="small text-secondary">Upload session closed</span>
           <input id="personal-vault-input" type="file" multiple hidden disabled>
         </div>
         <div id="personal-vault-status" class="small text-secondary mt-2" aria-live="polite"></div>
-        <div id="personal-vault-files" class="mt-3 small">Belum ada file tersimpan.</div>
+        <div id="personal-vault-files" class="mt-3 small">No files stored yet.</div>
       </div>
     </div>
 
@@ -114,34 +114,34 @@
         <div class="fw-semibold mb-2">🔑 Your Keys</div>
         <div class="small-note mb-1">Public Key</div>
         <div id="v3PubKey" class="addr small mb-2" style="font-size:.68rem;background:#0b1626;padding:.4rem;border-radius:4px;word-break:break-all"></div>
-        <div class="small-note mb-1">Private Key <span class="text-danger small">(jangan dibagikan)</span></div>
+        <div class="small-note mb-1">Private Key <span class="text-danger small">(do not share)</span></div>
         <div id="v3PrivKey" class="addr small mb-2" style="font-size:.68rem;background:#0b1626;padding:.4rem;border-radius:4px;word-break:break-all;display:none"></div>
         <div class="d-flex flex-wrap gap-2 mb-2">
-          <button class="btn btn-sm btn-outline-light" onclick="navigator.clipboard.writeText(document.getElementById('v3PubKey').textContent)">Salin Public Key</button>
-          <button class="btn btn-sm btn-outline-warning" onclick="togglePrivKey()">Tampilkan Private Key</button>
-          <button class="btn btn-sm btn-success" onclick="downloadKeysV3()">⬇ Unduh Keys (.jsonl)</button>
+          <button class="btn btn-sm btn-outline-light" onclick="navigator.clipboard.writeText(document.getElementById('v3PubKey').textContent)">Copy Public Key</button>
+          <button class="btn btn-sm btn-outline-warning" onclick="togglePrivKey()">Show Private Key</button>
+          <button class="btn btn-sm btn-success" onclick="downloadKeysV3()">⬇ Download Keys (.jsonl)</button>
         </div>
-        <div class="small-note">Magic Link dibuat otomatis saat enkripsi file. Simpan Private Key — tanpanya data tidak bisa dibuka kembali.</div>
+        <div class="small-note">Magic Link is generated automatically when encrypting files. Save your Private Key — without it, your data cannot be recovered.</div>
       </div>
     </div>
 
     <div id="v3UploadBox" class="card bg-dark border-secondary mb-3 d-none">
       <div class="card-body">
-        <div class="fw-semibold mb-2">🔒 Enkripsi File Pribadi</div>
-        <div class="small-note mb-2">Upload foto, video, dokumen apapun. Semua dienkripsi. Waktu upload: <span id="v3Timer">25</span> detik per sesi.</div>
+        <div class="fw-semibold mb-2">🔒 Personal File Encryption</div>
+        <div class="small-note mb-2">Upload photos, videos, documents — anything. All encrypted. Upload window: <span id="v3Timer">25</span> seconds per session.</div>
         <div id="v3TimerBarWrap" class="mb-2">
           <div style="height:4px;background:#1e2a3a;border-radius:2px"><div id="v3TimerBar" style="height:100%;background:#3fa9f5;border-radius:2px;width:100%;transition:width 1s linear"></div></div>
         </div>
         <div id="v3UploadArea">
           <label class="btn btn-primary btn-sm" id="v3UploadBtn">
-            Pilih File
+            Choose Files
             <input type="file" id="v3FileInput" multiple hidden onchange="handleV3Upload(this)">
           </label>
         </div>
         <div id="v3GpsConsent" class="mt-2 d-none">
-          <div class="small-note mb-1">File mengandung data GPS. Izinkan penyalinan metadata GPS?</div>
-          <button class="btn btn-sm btn-primary me-2" onclick="approveGPS()">Izinkan</button>
-          <button class="btn btn-sm btn-outline-secondary" onclick="denyGPS()">Tolak</button>
+          <div class="small-note mb-1">This file contains GPS data. Allow copying GPS metadata?</div>
+          <button class="btn btn-sm btn-primary me-2" onclick="approveGPS()">Allow</button>
+          <button class="btn btn-sm btn-outline-secondary" onclick="denyGPS()">Deny</button>
         </div>
         <div id="v3UploadResult" class="mt-2 small"></div>
       </div>
@@ -177,7 +177,7 @@
 
     <div class="card bg-dark border-secondary mt-3">
       <div class="card-body">
-        <div class="fw-semibold mb-1">Riwayat Blockchain</div>
+        <div class="fw-semibold mb-1">Blockchain History</div>
         <div class="small-note mb-2" id="ledgerStat"></div>
         <div id="ledgerList" class="small addr"></div>
       </div>
@@ -557,7 +557,7 @@ function startV3Timer() {
     document.getElementById('v3TimerBar').style.width = (v3Seconds/25*100) + '%';
     if (v3Seconds <= 0) {
       clearInterval(v3UploadTimer);
-      document.getElementById('v3UploadArea').innerHTML = '<div class="small-note text-warning">Sesi upload selesai. Kunci ulang dan buka lagi untuk upload berikutnya.</div>';
+      document.getElementById('v3UploadArea').innerHTML = '<div class="small-note text-warning">Upload session ended. Lock and re-enter to upload again.</div>';
     }
   }, 1000);
 }
@@ -572,7 +572,7 @@ function handleV3Upload(input) {
     item.innerHTML = '<b>' + file.name + '</b> (' + (file.size/1024).toFixed(1) + ' KB) — <span style="color:#f59e0b">Mengenkripsi...</span>';
     result.appendChild(item);
     setTimeout(() => {
-      item.innerHTML = '<b>' + file.name + '</b> — <span style="color:#22c55e">✓ Terenkripsi</span> · AES-256-GCM + Serpent-256 + ARIA-256-GCM';
+      item.innerHTML = '<b>' + file.name + '</b> — <span style="color:#22c55e">✓ Encrypted</span> · AES-256-GCM + Serpent-256 + ARIA-256-GCM';
       if (file.type.startsWith('image/') || file.type.startsWith('video/')) {
         document.getElementById('v3GpsConsent').classList.remove('d-none');
       }
@@ -582,12 +582,12 @@ function handleV3Upload(input) {
 
 function approveGPS() {
   document.getElementById('v3GpsConsent').classList.add('d-none');
-  document.getElementById('v3UploadResult').innerHTML += '<div class="small-note mt-1" style="color:#22c55e">✓ GPS metadata disalin dan terenkripsi.</div>';
+  document.getElementById('v3UploadResult').innerHTML += '<div class="small-note mt-1" style="color:#22c55e">✓ GPS metadata copied and encrypted.</div>';
 }
 
 function denyGPS() {
   document.getElementById('v3GpsConsent').classList.add('d-none');
-  document.getElementById('v3UploadResult').innerHTML += '<div class="small-note mt-1">GPS metadata diabaikan.</div>';
+  document.getElementById('v3UploadResult').innerHTML += '<div class="small-note mt-1">GPS metadata ignored.</div>';
 }
 
 function loadCreatorNotifs() {
