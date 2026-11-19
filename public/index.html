@@ -83,21 +83,21 @@
   <section id="main" class="d-none">
     <div class="card bg-dark border-secondary mb-3">
       <div class="card-body">
-        <div class="small-note mb-1">Alamat kamu</div>
+        <div class="small-note mb-1">Your address</div>
         <div id="addr" class="addr h5 mb-2"></div>
         <div class="d-flex flex-wrap gap-2">
-          <button id="btnCopy" class="btn btn-sm btn-outline-light">Salin Alamat</button>
-          <button id="btnBackup" class="btn btn-sm btn-outline-light">Unduh Cadangan Kunci</button>
-          <label class="btn btn-sm btn-outline-light mb-0">Pulihkan Kunci<input id="restore" type="file" accept=".json" hidden></label>
+          <button id="btnCopy" class="btn btn-sm btn-outline-light">Copy Address</button>
+          <button id="btnBackup" class="btn btn-sm btn-outline-light">Download Key Backup</button>
+          <label class="btn btn-sm btn-outline-light mb-0">Restore Key<input id="restore" type="file" accept=".json" hidden></label>
         </div>
-        <div class="small-note mt-2">Kunci tersimpan terenkripsi dengan kata sandimu di perangkat ini. Unduh cadangan agar alamat bisa dipulihkan di perangkat lain.</div>
+        <div class="small-note mt-2">Keys are stored encrypted with your password on this device. Download a backup to restore your address on another device.</div>
       </div>
     </div>
 
     <div class="card bg-dark border-secondary mb-3">
       <div class="card-body">
         <div class="fw-semibold mb-1">Personal Vault</div>
-        <div class="small-note mb-3">File dienkripsi di perangkat dengan X448 dan AES-256-GCM sebelum dikirim. Server menyimpan ciphertext; nama file dan daftar file tersimpan di vault terenkripsi.</div>
+        <div class="small-note mb-3">Files are encrypted on your device with X448 and AES-256-GCM before sending. The server stores only ciphertext.</div>
         <div class="d-flex flex-wrap align-items-center gap-2">
           <button id="personal-vault-open" class="btn btn-sm btn-primary" type="button" onclick="openPersonalVaultWindow()">Open upload session · 25 detik</button>
           <span id="personal-vault-timer" class="small text-secondary">Upload session closed</span>
