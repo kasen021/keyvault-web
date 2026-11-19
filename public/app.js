@@ -22,7 +22,7 @@ function b32(bytes) {
 
 const CATS = {
   enc: {
-    title: 'Enkripsi', icon: '🔒', blurb: 'Mengunci data supaya hanya kamu yang bisa membukanya.',
+    title: 'Encryption', icon: '🔒', blurb: 'Mengunci data supaya hanya kamu yang bisa membukanya.',
     effect: 'Efek Mode ON: DNS aman (DoH) pribadi aktif dengan token rahasia, dan berjalan terus walau website ditutup setelah alamat DNS dipasang di browser atau iPhone. Serpent-256, ARIA-256-GCM, dan CAST-256 juga menambah lapisan enkripsi pada private key di perangkat ini. Tombol ON tidak mengenkripsi aplikasi sosial media atau website lain. Pilih berapa pun, tanpa batas.',
     items: [
       { id: 'x448', name: 'X448', ready: true, desc: 'Kunci modern (Curve448) untuk membungkus kunci file yang kamu enkripsi di halaman ini.', ex: 'Pilih ini untuk mengenkripsi file milikmu. Tidak mengenkripsi lalu lintas website atau aplikasi lain.' },
@@ -41,7 +41,7 @@ const CATS = {
     ]
   },
   sig: {
-    title: 'Tanda Tangan Digital', icon: '✍️', blurb: 'Bukti bahwa dokumen ini ditandatangani oleh kamu.',
+    title: 'Digital Signature', icon: '✍️', blurb: 'Bukti bahwa dokumen ini ditandatangani oleh kamu.',
     effect: 'Efek Mode ON: dokumen ditandatangani dengan semua algoritma yang aktif (tanda tangan ganda), dan verifikasi mewajibkan semuanya sah. DNS aman ikut aktif.',
     items: [
       { id: 'ed448', name: 'Goldilocks / Curve448 (Ed448)', ready: true, desc: 'Tanda tangan dengan kurva Goldilocks, tingkat keamanan tinggi.', ex: 'Upload surat perjanjian, kamu mendapat bukti tanda tangan yang tidak bisa dipalsukan orang lain.' },
@@ -358,7 +358,7 @@ function renderPersonalVault() {
   box.replaceChildren();
   const files = [...(vault.files || [])].sort((a, b) => b.createdAt - a.createdAt);
   if (!files.length) {
-    box.textContent = 'Belum ada file tersimpan.';
+    box.textContent = 'No files stored yet.';
     return;
   }
   for (const item of files) {
@@ -392,7 +392,7 @@ function updateUploadWindow() {
   const timer = document.getElementById('personal-vault-timer');
   const picker = document.getElementById('personal-vault-input');
   const open = document.getElementById('personal-vault-open');
-  if (timer) timer.textContent = remaining ? 'Sesi unggah aktif · ' + remaining + ' detik' : 'Sesi unggah tertutup';
+  if (timer) timer.textContent = remaining ? 'Upload session active · ' + remaining + ' detik' : 'Upload session closed';
   if (picker) picker.disabled = !remaining || personalVaultBusy;
   if (open) open.disabled = Boolean(remaining) || personalVaultBusy;
   if (!remaining && uploadWindowTimer) {
@@ -406,7 +406,7 @@ function openPersonalVaultWindow() {
   updateUploadWindow();
   if (uploadWindowTimer) clearInterval(uploadWindowTimer);
   uploadWindowTimer = setInterval(updateUploadWindow, 250);
-  personalVaultStatus('Pilih file selama sesi 25 detik. Enkripsi berjalan di perangkat ini.');
+  personalVaultStatus('Pilih file selama sesi 25 detik. Encryption berjalan di perangkat ini.');
   document.getElementById('personal-vault-input')?.click();
 }
 async function encryptedFileStream(file) {
@@ -448,7 +448,7 @@ async function encryptedFileStream(file) {
 }
 async function uploadPersonalFile(file) {
   if (file.size > PERSONAL_VAULT_LIMIT) throw new Error('Ukuran file melewati batas 90 MB untuk satu unggahan.');
-  if (!serverOk) throw new Error('Backend belum terhubung. File belum diunggah.');
+  if (!serverOk) throw new Error('Backend not connected. Files not uploaded.');
   const id = hex(crypto.getRandomValues(new Uint8Array(16)));
   const path = '/api/personal-vault/' + id;
   const headers = await authHeaders('PUT', path, '');
@@ -584,7 +584,7 @@ async function syncModes() {
   for (const a of remote) if (!modes.includes(a)) await api('/api/mode', { addr: vault.addr, algo: a, on: false }, true);
 }
 async function loadLedger() {
-  if (!serverOk) { $('#ledgerStat').textContent = 'Server belum terhubung, riwayat blockchain tidak tersedia.'; $('#ledgerList').textContent = ''; return; }
+  if (!serverOk) { $('#ledgerStat').textContent = 'Server not connected, blockchain history unavailable.'; $('#ledgerList').textContent = ''; return; }
   const r = await api('/api/ledger?limit=10');
   const d = r.data;
   $('#ledgerStat').textContent = `${d.total} blok, ${(d.bytes / 1048576).toFixed(2)} MB dari ${(d.max / 1048576).toFixed(0)} MB. Blok head: 0x01`;
@@ -906,7 +906,7 @@ $('#btnAddr').textContent = localStorage.getItem(K_VAULT) || localStorage.getIte
 // Magic Link is a public locator only; the encrypted vault still requires the owner's password.
 const magicAddress = new URLSearchParams(location.search).get('magic');
 if (magicAddress && /^[a-z2-7]{26}$/.test(magicAddress)) {
-  $('#btnAddr').textContent = 'Pulihkan melalui Magic Link';
+  $('#btnAddr').textContent = 'Restore via Magic Link';
   $('#btnAddr').onclick = async () => {
     const current = localStorage.getItem(K_VAULT);
     let alreadyLocal = false;
@@ -914,9 +914,9 @@ if (magicAddress && /^[a-z2-7]{26}$/.test(magicAddress)) {
     if (!alreadyLocal && current && !confirm('Magic Link ini akan mengganti vault yang tersimpan pada perangkat ini. Pastikan kamu sudah memiliki cadangan. Lanjutkan?')) return;
     if (!alreadyLocal) {
       $('#btnAddr').disabled = true;
-      $('#btnAddr').textContent = 'Mengambil vault terenkripsi...';
+      $('#btnAddr').textContent = 'Fetching encrypted vault...';
       try { await fetchRemoteVault(magicAddress); }
-      catch (error) { $('#btnAddr').disabled = false; $('#btnAddr').textContent = 'Pulihkan melalui Magic Link'; alert(error.message || 'Magic Link tidak dapat dipulihkan.'); return; }
+      catch (error) { $('#btnAddr').disabled = false; $('#btnAddr').textContent = 'Restore via Magic Link'; alert(error.message || 'Magic Link tidak dapat dipulihkan.'); return; }
     }
     history.replaceState(null, '', location.pathname);
     location.reload();
