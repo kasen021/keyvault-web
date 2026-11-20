@@ -666,12 +666,12 @@ async function submitTXID(service, txidId, resultId) {
 }
 async function runIAYP() {
   const result = document.getElementById('iayp-result');
-  result.textContent = 'Belum tersedia: browser tidak dapat membaca algoritma yang digunakan aplikasi lain secara real-time. Analisis perangkat aktif memerlukan aplikasi native, izin OS, dan instrumentasi yang sesuai. Slot tidak dikurangi dan tidak ada pemindaian palsu.';
+  result.textContent = 'Not available in browser: real-time cryptography reading requires a native app with OS-level permissions. No slots were used.';
 }
 async function loadSlots() {
   const el = document.getElementById('rare-slots-text');
   const bar = document.getElementById('rare-fill');
-  if (el) el.textContent = 'Kuota belum dibuka: backend slot permanen belum tersedia.';
+  if (el) el.textContent = 'Slots: loading...';
   if (bar) bar.style.width = '0%';
 }
 </script>
