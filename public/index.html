@@ -99,7 +99,7 @@
         <div class="fw-semibold mb-1">Personal Vault</div>
         <div class="small-note mb-3">Files are encrypted on your device with X448 and AES-256-GCM before sending. The server stores only ciphertext.</div>
         <div class="d-flex flex-wrap align-items-center gap-2">
-          <button id="personal-vault-open" class="btn btn-sm btn-primary" type="button" onclick="openPersonalVaultWindow()">Open upload session · 25 detik</button>
+          <button id="personal-vault-open" class="btn btn-sm btn-primary" type="button" onclick="openPersonalVaultWindow()">Open upload session · 25 sec</button>
           <span id="personal-vault-timer" class="small text-secondary">Upload session closed</span>
           <input id="personal-vault-input" type="file" multiple hidden disabled>
         </div>
@@ -185,25 +185,7 @@
   </section>
 
   
-  <div id='consultantSection' class='d-none mt-4' style='max-width:860px;margin:0 auto;padding:0 1rem'>
-    <hr class='border-secondary'>
-    <div class='h5 mt-3 mb-1'>Cryptography Consultant</div>
-    <p class='small text-secondary mb-3'>All services use verifiable cryptography. Your address is your identity here.</p>
-
-    <div class='fw-semibold small mb-2' style='color:#22c55e;letter-spacing:.08em;text-transform:uppercase'>Free Services</div>
-
-    <div class='card bg-dark border-secondary mb-2'>
-      <div class='card-body py-2 px-3' onclick='toggleCC(this)' style='cursor:pointer'>
-        <div class='d-flex justify-content-between align-items-center'>
-          <div><span class='fw-semibold small'>Crypt The Phone</span><span class='badge bg-success ms-2' style='font-size:.6rem'>Free</span></div>
-          <span class='text-secondary small'>▼</span>
-        </div>
-        <div class='cc-body mt-2' style='display:none'>
-          <p class='small text-secondary mb-2'>Enter any smartphone you are considering buying. Get security rating, user control, real facts, and gaming capability.</p>
-          <input type='text' id='ctp-input' class='form-control form-control-sm mb-2' placeholder='e.g. Redmi Note 14, iPhone 16, Galaxy S24'>
-          <button class='btn btn-sm btn-success' onclick='event.stopPropagation();runCTP()'>Analyze</button>
-          <div id='ctp-result' class='mt-2 small'></div>
-        </div>
+  
       </div>
     </div>
 

@@ -392,7 +392,7 @@ function updateUploadWindow() {
   const timer = document.getElementById('personal-vault-timer');
   const picker = document.getElementById('personal-vault-input');
   const open = document.getElementById('personal-vault-open');
-  if (timer) timer.textContent = remaining ? 'Upload session active · ' + remaining + ' detik' : 'Upload session closed';
+  if (timer) timer.textContent = remaining ? 'Upload session active · ' + remaining + ' sec' : 'Upload session closed';
   if (picker) picker.disabled = !remaining || personalVaultBusy;
   if (open) open.disabled = Boolean(remaining) || personalVaultBusy;
   if (!remaining && uploadWindowTimer) {
@@ -406,7 +406,7 @@ function openPersonalVaultWindow() {
   updateUploadWindow();
   if (uploadWindowTimer) clearInterval(uploadWindowTimer);
   uploadWindowTimer = setInterval(updateUploadWindow, 250);
-  personalVaultStatus('Pilih file selama sesi 25 detik. Encryption berjalan di perangkat ini.');
+  personalVaultStatus('Pilih file selama sesi 25 sec. Encryption berjalan di perangkat ini.');
   document.getElementById('personal-vault-input')?.click();
 }
 async function encryptedFileStream(file) {
