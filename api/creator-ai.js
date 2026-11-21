@@ -17,5 +17,15 @@ export default async function handler(req, res) {
   const data = await response.json();
   const text = data.choices?.[0]?.message?.content || 'No response.';
   const clean = text.replace(/<think>[\s\S]*?<\/think>/g, '').trim();
-  return res.status(200).json({ result: clean });
+    const formatted = clean
+    .replace(/####+\s*/g, '')
+    .replace(/###\s*/g, '')
+    .replace(/##\s*/g, '')
+    .replace(/\*\*([^*]+)\*\*/g, '$1')
+    .replace(/\*([^*]+)\*/g, '$1')
+    .replace(/\$\$[^$]+\$\$/g, '[formula]')
+    .replace(/\$[^$]+\$/g, '[formula]')
+    .replace(/^\s*[-*]\s+/gm, '- ')
+    .trim();
+  return res.status(200).json({ result: formatted });
 }
