@@ -12,6 +12,10 @@
   ],
   "routes": [
     {
+      "src": "/api/creator-ai",
+      "dest": "/api/creator-ai.js"
+    },
+    {
       "src": "/api/auth",
       "dest": "/api/auth.js"
     },

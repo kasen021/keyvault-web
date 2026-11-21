@@ -773,9 +773,9 @@ async function runCreatorAI() {
   const result = document.getElementById('creatorAIResult');
   result.innerHTML = '<span style="color:#a855f7">AI menganalisis...</span>';
   try {
-    const res = await fetch('/api/crypt-the-phone', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({device: input})});
+    const res = await fetch('/api/creator-ai', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({query: input})});
     const d = await res.json();
-    result.innerHTML = '<div style="color:#e8e8f0">' + (d.summary || JSON.stringify(d).slice(0,300)) + '</div>';
+    result.innerHTML = '<div style="color:#e8e8f0;white-space:pre-wrap">' + (d.result || d.summary || '') + '</div>';
   } catch(e) { result.innerHTML = '<span style="color:#ef4444">Gagal.</span>'; }
 }
 
