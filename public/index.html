@@ -636,7 +636,7 @@ function runEYS() {
 }
 async function submitTXID(service, txidId, resultId) {
   const result = document.getElementById(resultId);
-  result.textContent = 'Verifikasi pembayaran Bitcoin belum terhubung ke node atau Blockchain Explorer. TXID belum diperiksa dan pembayaran belum diterima. Jangan mengirim dana melalui formulir ini dahulu.';
+  result.innerHTML = '<span style="color:#f59e0b">TXID received. Verification will be processed manually. You will be contacted via DM after confirmation.</span>';
 }
 async function runIAYP() {
   const result = document.getElementById('iayp-result');
