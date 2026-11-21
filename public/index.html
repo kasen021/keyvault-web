@@ -852,5 +852,41 @@ function enterWithNewKeys() {
   document.getElementById('v3AuthBox').classList.add('d-none');
 }
 </script>
+
+<script>
+function isCreatorAddr() {
+  const addr = sessionStorage.getItem('kv_address') || window._kvAddr || '';
+  return addr === 'KV1220A1DE2463C717ACA169E884D2A8EA843CCE4D8';
+}
+
+function applyCreatorBypass() {
+  if (!isCreatorAddr()) return;
+  const payLines = document.querySelectorAll('.cc-body .small.text-secondary');
+  payLines.forEach(el => {
+    if (el.textContent.includes('Pay to:')) el.style.display = 'none';
+  });
+  const readonlyInputs = document.querySelectorAll('#gc-addr, #bc-addr, #ca-addr');
+  readonlyInputs.forEach(el => el.style.display = 'none');
+  const txidInputs = document.querySelectorAll('#gc-txid, #bc-txid, #ca-txid');
+  txidInputs.forEach(el => el.style.display = 'none');
+  const verifyBtns = document.querySelectorAll('[onclick*="submitTXID"]');
+  verifyBtns.forEach(btn => btn.style.display = 'none');
+  const encryptYourSsstt = document.querySelectorAll('.cc-body');
+  document.querySelectorAll('#eys-result').forEach(el => {
+    el.innerHTML = '<span style="color:#22c55e">Creator access — no payment required.</span>';
+  });
+  document.querySelectorAll('#gc-result, #bc-result, #ca-result').forEach(el => {
+    el.innerHTML = '<span style="color:#f59e0b">Creator access — contact yourself in DM or manage directly.</span>';
+  });
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+  const obs = new MutationObserver(function() {
+    if (isCreatorAddr()) applyCreatorBypass();
+  });
+  obs.observe(document.body, {subtree: true, childList: true});
+});
+</script>
+
 </body>
 </html>
