@@ -150,15 +150,15 @@
     <div id="creatorPanelBox" class="card bg-dark mb-3 d-none" style="border:1px solid #3fa9f5;border-left:3px solid #f59e0b">
       <div class="card-body">
         <div class="fw-semibold mb-2" style="color:#f59e0b">👑 Creator Panel — Katoshi Elito Globatos</div>
-        <div class="small-note mb-2">Hanya terlihat oleh Creator. AI Asisten Cryptanalysis eksklusif.</div>
+        <div class="small-note mb-2">Only visible to Creator. Exclusive AI Cryptanalysis assistant.</div>
         <div id="creatorNotifBox" class="mb-3">
-          <div class="fw-semibold small mb-1">Notifikasi</div>
+          <div class="fw-semibold small mb-1">Notifications</div>
           <div id="creatorNotifList" class="small-note">Memuat notifikasi...</div>
         </div>
         <div class="fw-semibold small mb-1" style="color:#a855f7">AI Cryptanalysis Assistant</div>
         <div class="input-group input-group-sm mb-2">
           <input type="text" id="creatorAIInput" class="form-control bg-dark text-light border-secondary" placeholder="Deskripsikan kriptografi untuk dianalisis...">
-          <button class="btn btn-outline-info" onclick="runCreatorAI()">Analisis</button>
+          <button class="btn btn-outline-info" onclick="runCreatorAI()">Analyze</button>
         </div>
         <div id="creatorAIResult" class="small"></div>
       </div>
@@ -763,7 +763,7 @@ function denyGPS() {
 function loadCreatorNotifs() {
   const box = document.getElementById('creatorNotifList');
   const notifs = JSON.parse(localStorage.getItem('creator_notifs') || '[]');
-  if (!notifs.length) { box.textContent = 'Belum ada notifikasi.'; return; }
+  if (!notifs.length) { box.textContent = 'No notifications yet.'; return; }
   box.innerHTML = notifs.map(n => '<div class="border border-secondary rounded p-2 mb-1"><b>' + n.type + '</b> dari ' + n.from.slice(0,12) + '... ' + n.time + '</div>').join('');
 }
 
