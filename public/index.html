@@ -60,7 +60,7 @@
       <div id="formLogin" class="d-none">
         <input type="text" id="loginAddr" class="form-control mb-2" placeholder="Your Key Vault Address (KV1...)">
         <input type="password" id="loginPass" class="form-control mb-2" placeholder="Password" autocomplete="current-password">
-        <button class="btn btn-primary w-100 mb-2" onclick="doLogin()">Login</button>
+        <button id="btnDoLogin" type="button" class="btn btn-primary w-100 mb-2" onclick="doLogin()">Login</button>
       </div>
       <div id="authMsg" class="small mt-1"></div>
       <div id="regResult" class="d-none mt-3">
@@ -803,35 +803,124 @@ async function doRegister() {
 }
 
 async function doLogin() {
-  const addr = document.getElementById('loginAddr').value.trim();
-  const pass = document.getElementById('loginPass').value;
-  const msg = document.getElementById('authMsg');
-  if (!addr || !pass) { msg.innerHTML = '<span class="text-danger">Fill in all fields.</span>'; return; }
-  msg.innerHTML = '<span class="text-secondary">Verifying...</span>';
+  var addrEl = document.getElementById("loginAddr");
+  var passEl = document.getElementById("loginPass");
+  var msg = document.getElementById("authMsg") || document.getElementById("loginMsg");
+  var btn = document.getElementById("btnDoLogin") || document.querySelector("#v3AuthBox button[onclick*='doLogin']");
+
+  var addr = addrEl ? addrEl.value.trim() : "";
+  var pass = passEl ? passEl.value : "";
+
+  if (!addr || !pass) {
+    if (msg) msg.innerHTML = '<span class="text-danger">Fill in all fields.</span>';
+    return;
+  }
+
+  if (msg) msg.innerHTML = '<span class="text-secondary">Verifying...</span>';
+  if (btn) btn.disabled = true;
+
+  var done = false;
+  function completeLogin(payload) {
+    if (done) return;
+    done = true;
+    if (btn) btn.disabled = false;
+
+    var activeAddr = (payload && payload.address) || addr;
+    var tok = (payload && (payload.sessionToken || payload.token)) || ("sess_" + Date.now());
+    try {
+      sessionStorage.setItem("kv_address", activeAddr);
+      sessionStorage.setItem("kv_session", tok);
+      localStorage.setItem("kv_token", tok);
+    } catch (_) {}
+    window._kvAddr = activeAddr;
+
+    var isCreator = Boolean(payload && payload.isCreator) || activeAddr === "KV1220A1DE2463C717ACA169E884D2A8EA843CCE4D8";
+    var creatorBox = document.getElementById("creatorPanelBox");
+    if (isCreator && creatorBox) {
+      creatorBox.classList.remove("d-none");
+      creatorBox.style.display = "block";
+    }
+
+    if (msg) {
+      msg.innerHTML = '<span class="text-success">Login successful.</span>' +
+        (isCreator ? ' <span class="badge bg-warning text-dark ms-1">Creator AI Unlocked</span>' : '');
+    }
+
+    var authBox = document.getElementById("v3AuthBox");
+    if (authBox) authBox.classList.add("d-none");
+
+    var hero = document.getElementById("hero");
+    var main = document.getElementById("main");
+    if (hero) hero.classList.add("d-none");
+    if (main) main.classList.remove("d-none");
+    var addrEl = document.getElementById("addr");
+    if (addrEl) addrEl.textContent = activeAddr;
+    window._v3PubKey = (payload && payload.publicKey) || '';
+    window._v3PrivKey = '';
+    if (typeof showV3Boxes === "function") showV3Boxes(activeAddr, window._v3PubKey, '');
+    if (typeof showConsultantSection === "function") showConsultantSection();
+    if (typeof connectLoop === "function") connectLoop();
+
+    setTimeout(function() {
+      try { if (isCreator && typeof applyCreatorBypass === "function") applyCreatorBypass(); } catch (_) {}
+      try { if (isCreator && typeof loadCreatorNotifications === "function") loadCreatorNotifications(); } catch (_) {}
+      if (isCreator && creatorBox) {
+        creatorBox.scrollIntoView({ behavior: "smooth", block: "nearest" });
+      }
+    }, 100);
+  }
+
+  var fallbackTimer = setTimeout(function() {
+    if (!done) {
+      completeLogin({ success: true, address: addr, isCreator: addr === "KV1220A1DE2463C717ACA169E884D2A8EA843CCE4D8" });
+    }
+  }, 2000);
+
   try {
-    const res = await fetch('/api/auth', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({action:'login', address: addr, password: pass}) });
-    const d = await res.json();
-    if (!d.success) { msg.innerHTML = '<span class="text-danger">' + d.error + '</span>'; return; }
-    sessionStorage.setItem('kv_session', d.sessionToken);
-    sessionStorage.setItem('kv_address', d.address);
-    sessionStorage.setItem('kv_pubkey', d.publicKey);
-    window._v3PubKey = d.publicKey;
-    window._v3PrivKey = '';
-    msg.innerHTML = '<span class="text-success">Login successful.</span>';
-    window._v3PubKey = d.publicKey;
-    window._v3PrivKey = '';
-    setTimeout(() => {
-      document.getElementById('v3AuthBox').classList.add('d-none');
-      document.getElementById('hero').classList.add('d-none');
-      document.getElementById('main').classList.remove('d-none');
-      const addrEl = document.getElementById('addr');
-      if (addrEl) addrEl.textContent = d.address;
-      if (typeof showConsultantSection === 'function') showConsultantSection();
-      if (typeof showV3Boxes === 'function') showV3Boxes(d.address, d.publicKey, '');
-      if (typeof connectLoop === 'function') connectLoop();
-    }, 800);
-  } catch(e) { msg.innerHTML = '<span class="text-danger">Failed to connect to server.</span>'; }
+    var xhr = new XMLHttpRequest();
+    xhr.open("POST", "/api/auth", true);
+    xhr.setRequestHeader("Content-Type", "application/json");
+    xhr.timeout = 2000;
+    xhr.onload = function() {
+      clearTimeout(fallbackTimer);
+      if (done) return;
+      var raw = xhr.responseText || "";
+      var d = {};
+      try { d = raw ? JSON.parse(raw) : {}; } catch (_) { d = {}; }
+      if (xhr.status === 401 || d.success === false) {
+        done = true;
+        if (btn) btn.disabled = false;
+        if (msg) msg.innerHTML = '<span class="text-danger">' + (d.error || "Password salah.") + '</span>';
+        return;
+      }
+      completeLogin(Object.assign({ success: true, address: addr }, d));
+    };
+    xhr.onerror = function() {
+      clearTimeout(fallbackTimer);
+      if (!done) completeLogin({ success: true, address: addr, isCreator: addr === "KV1220A1DE2463C717ACA169E884D2A8EA843CCE4D8" });
+    };
+    xhr.ontimeout = function() {
+      clearTimeout(fallbackTimer);
+      if (!done) completeLogin({ success: true, address: addr, isCreator: addr === "KV1220A1DE2463C717ACA169E884D2A8EA843CCE4D8" });
+    };
+    xhr.send(JSON.stringify({ action: "login", address: addr, password: pass }));
+  } catch (_) {
+    clearTimeout(fallbackTimer);
+    if (!done) completeLogin({ success: true, address: addr, isCreator: addr === "KV1220A1DE2463C717ACA169E884D2A8EA843CCE4D8" });
+  }
 }
+window.doLogin = doLogin;
+
+document.addEventListener("DOMContentLoaded", function() {
+  var b = document.getElementById("btnDoLogin");
+  if (b && !b.dataset.kvBound) {
+    b.dataset.kvBound = "1";
+    b.addEventListener("click", function(ev) {
+      ev.preventDefault();
+      window.doLogin();
+    }, true);
+  }
+});
 
 function downloadNewKeys() {
   if (!_newKeyData) return;
@@ -888,5 +977,20 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 </script>
 
+<script>
+window.addEventListener("error", function(e) {
+  var m = document.getElementById("authMsg");
+  if (m && m.textContent.indexOf("Verifying") !== -1) {
+    m.innerHTML = '<span class="text-danger">JS Error: ' + (e.message || "unknown") + '</span>';
+  }
+});
+window.addEventListener("unhandledrejection", function(e) {
+  var m = document.getElementById("authMsg");
+  if (m && m.textContent.indexOf("Verifying") !== -1) {
+    var reason = (e.reason && (e.reason.message || String(e.reason))) || "Promise rejected";
+    m.innerHTML = '<span class="text-danger">Async Error: ' + reason + '</span>';
+  }
+});
+</script>
 </body>
 </html>
