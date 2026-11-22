@@ -824,10 +824,10 @@ async function doLogin() {
     const isCreator = d.address === 'KV1220A1DE2463C717ACA169E884D2A8EA843CCE4D8';
     msg.innerHTML = '<span class="text-success">Login successful.' + (isCreator ? ' Creator AI Unlocked.' : '') + '</span>';
     document.getElementById('v3AuthBox').classList.add('d-none');
-    document.getElementById('hero').classList.add('d-none');
+    const heroEl = document.getElementById('hero'); console.log('hero:', heroEl); if (heroEl) heroEl.classList.add('d-none');
     document.getElementById('main').classList.remove('d-none');
     document.getElementById('addr').textContent = d.address;
-    if (typeof showV3Boxes === 'function') showV3Boxes(d.address, d.publicKey || '', '');
+    console.log('KV DEBUG:', d.address, d.publicKey ? 'pubkey ok' : 'no pubkey'); if (typeof showV3Boxes === 'function') showV3Boxes(d.address, d.publicKey || '', '');
     if (typeof showConsultantSection === 'function') showConsultantSection();
     if (typeof connectLoop === 'function') connectLoop();
     if (isCreator) {
