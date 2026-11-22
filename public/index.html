@@ -830,6 +830,9 @@ async function doLogin() {
     console.log('KV DEBUG:', d.address, d.publicKey ? 'pubkey ok' : 'no pubkey'); if (typeof showV3Boxes === 'function') showV3Boxes(d.address, d.publicKey || '', '');
     if (typeof showConsultantSection === 'function') showConsultantSection();
     if (typeof connectLoop === 'function') connectLoop();
+    document.getElementById('hero').classList.add('d-none');
+    document.getElementById('main').classList.remove('d-none');
+    document.getElementById('addr').textContent = d.address;
     window.dispatchEvent(new CustomEvent('kv:login', {detail: {address: d.address, publicKey: d.publicKey || '', token: d.sessionToken || ''}}));
     if (window._kvEnterVault) window._kvEnterVault(d.address, d.publicKey || '', d.sessionToken || '');
     if (isCreator) {
