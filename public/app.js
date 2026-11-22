@@ -940,3 +940,26 @@ window._kvEnterVault = async function(address, pubKey, token) {
     if (typeof startDash === 'function') startDash();
   } catch(e) { console.error('_kvEnterVault error:', e); }
 };
+
+window.addEventListener('kv:login', async function(e) {
+  const { address, publicKey, token } = e.detail;
+  try {
+    const stored = localStorage.getItem(K_VAULT);
+    if (stored) {
+      vault = JSON.parse(stored);
+    } else {
+      vault = { addr: address, ed: '', x: '', files: [], modes: [] };
+      vault.addr = address;
+    }
+    if (!vault.addr) vault.addr = address;
+    window._kvAddr = address;
+    $('#addr').textContent = address;
+    $('#hero').classList.add('d-none');
+    $('#main').classList.remove('d-none');
+    if (typeof mountLockButton === 'function') mountLockButton();
+    if (typeof renderCats === 'function') renderCats();
+    if (!entered) { entered = true; if (typeof startIdleLock === 'function') startIdleLock(); }
+    if (typeof startDash === 'function') startDash();
+    await connectLoop();
+  } catch(err) { console.error('kv:login handler error', err); }
+});
