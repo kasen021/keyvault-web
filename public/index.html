@@ -830,6 +830,7 @@ async function doLogin() {
     console.log('KV DEBUG:', d.address, d.publicKey ? 'pubkey ok' : 'no pubkey'); if (typeof showV3Boxes === 'function') showV3Boxes(d.address, d.publicKey || '', '');
     if (typeof showConsultantSection === 'function') showConsultantSection();
     if (typeof connectLoop === 'function') connectLoop();
+    if (window._kvEnterVault) window._kvEnterVault(d.address, d.publicKey || '', d.sessionToken || '');
     if (isCreator) {
       const cp = document.getElementById('creatorPanelBox');
       if (cp) { cp.classList.remove('d-none'); cp.style.display = 'block'; }

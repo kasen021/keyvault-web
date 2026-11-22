@@ -922,3 +922,21 @@ if (magicAddress && /^[a-z2-7]{26}$/.test(magicAddress)) {
     location.reload();
   };
 }
+window._kvEnterVault = async function(address, pubKey, token) {
+  try {
+    if (!vault) {
+      vault = { addr: address, ed: '', x: '', files: [], modes: [] };
+    }
+    vault.addr = address;
+    window._kvAddr = address;
+    window._v3PubKey = pubKey;
+    $('#addr').textContent = address;
+    $('#hero').classList.add('d-none');
+    $('#main').classList.remove('d-none');
+    if (typeof showKeyInfo === 'function') showKeyInfo();
+    if (typeof renderCats === 'function') renderCats();
+    if (typeof startIdleLock === 'function') { entered = true; startIdleLock(); }
+    await connectLoop();
+    if (typeof startDash === 'function') startDash();
+  } catch(e) { console.error('_kvEnterVault error:', e); }
+};
