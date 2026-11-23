@@ -821,7 +821,11 @@ async function doLogin() {
     window._kvAddr = d.address;
     window._v3PubKey = d.publicKey || '';
     window._v3PrivKey = '';
+    sessionStorage.setItem('kv_pubkey', d.publicKey || '');
     const isCreator = d.address === 'KV1220A1DE2463C717ACA169E884D2A8EA843CCE4D8';
+    sessionStorage.setItem('kv_is_creator', isCreator ? '1' : '0');
+    window.location.href = '/vault?addr=' + encodeURIComponent(d.address);
+    return;
     msg.innerHTML = '<span class="text-success">Login successful.' + (isCreator ? ' Creator AI Unlocked.' : '') + '</span>';
     document.getElementById('v3AuthBox').classList.add('d-none');
     const heroEl = document.getElementById('hero'); console.log('hero:', heroEl); if (heroEl) heroEl.classList.add('d-none');
