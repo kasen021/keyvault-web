@@ -12,6 +12,10 @@
   ],
   "routes": [
     {
+      "src": "/vault3",
+      "dest": "/public/vault3.html"
+    },
+    {
       "src": "/api/creator-ai",
       "dest": "/api/creator-ai.js"
     },

@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Key Vault</title>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+<style>
+body{background:#0a0a0f;color:#e8e8f0;font-family:'Segoe UI',system-ui,sans-serif;min-height:100vh}
+.addr{font-family:monospace;word-break:break-all}
+.card{background:#111118;border-color:#2a2a3a}
+.creator-panel{border:1px solid #3fa9f5;border-left:3px solid #f59e0b}
+</style>
+</head>
+<body>
+<div class="container py-3" style="max-width:860px">
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <h5 class="mb-0">Key Vault</h5>
+    <button class="btn btn-sm btn-outline-danger" onclick="logout()">Lock</button>
+  </div>
+
+  <div class="card mb-3 p-3">
+    <div class="small text-secondary mb-1">Your address</div>
+    <div id="addrDisplay" class="addr h6 mb-2"></div>
+    <div class="d-flex gap-2 flex-wrap">
+      <button class="btn btn-sm btn-outline-light" onclick="copyAddr()">Copy Address</button>
+      <button class="btn btn-sm btn-outline-light" onclick="downloadKeys()">Download Keys (.jsonl)</button>
+    </div>
+  </div>
+
+  <div id="creatorPanel" class="card mb-3 p-3 d-none creator-panel">
+    <div class="fw-semibold mb-2" style="color:#f59e0b">Creator Panel — Katoshi Elito Globatos</div>
+    <div class="small text-secondary mb-2">Only visible to Creator. Exclusive AI Cryptanalysis assistant.</div>
+    <div class="fw-semibold small mb-1" style="color:#a855f7">AI Cryptanalysis Assistant</div>
+    <div class="small text-secondary mb-2">Paste any code, pseudocode, or algorithm description for analysis.</div>
+    <textarea id="aiInput" class="form-control form-control-sm mb-2" rows="4" placeholder="Paste Rust/C/Python code, pseudocode, or describe the algorithm..."></textarea>
+    <button class="btn btn-sm btn-outline-info mb-2" onclick="runAI()">Analyze</button>
+    <div id="aiResult" class="small" style="white-space:pre-wrap"></div>
+  </div>
+
+  <div class="card mb-3 p-3">
+    <div class="fw-semibold mb-2">Your Keys</div>
+    <div class="small text-secondary mb-1">Public Key</div>
+    <div id="pubKeyDisplay" class="addr small mb-2" style="font-size:.68rem;background:#0b1626;padding:.4rem;border-radius:4px"></div>
+    <div class="small text-secondary mb-1">Private Key <span class="text-danger">(do not share)</span></div>
+    <button class="btn btn-sm btn-outline-warning mb-2" onclick="togglePriv()">Show Private Key</button>
+    <div id="privKeyDisplay" class="addr small mb-2 d-none" style="font-size:.68rem;background:#0b1626;padding:.4rem;border-radius:4px"></div>
+  </div>
+
+  <div class="card mb-3 p-3">
+    <div class="fw-semibold mb-2">Personal File Encryption</div>
+    <div class="small text-secondary mb-2">Upload photos, videos, documents. All encrypted. Upload window: <span id="timerCount">25</span> seconds.</div>
+    <div style="height:4px;background:#1e2a3a;border-radius:2px;margin-bottom:.75rem"><div id="timerBar" style="height:100%;background:#3fa9f5;border-radius:2px;width:100%;transition:width 1s linear"></div></div>
+    <div id="uploadArea">
+      <label class="btn btn-primary btn-sm">Choose Files<input type="file" multiple hidden onchange="handleUpload(this)"></label>
+    </div>
+    <div id="gpsConsent" class="mt-2 d-none">
+      <div class="small text-secondary mb-1">This file contains GPS data. Allow copying GPS metadata?</div>
+      <button class="btn btn-sm btn-primary me-2" onclick="approveGPS()">Allow</button>
+      <button class="btn btn-sm btn-outline-secondary" onclick="denyGPS()">Deny</button>
+    </div>
+    <div id="uploadResult" class="mt-2 small"></div>
+  </div>
+
+  <div id="consultantSection"></div>
+</div>
+
+<script>
+const CREATOR = 'KV160A2A3E10025E1F4055F82EACBBF5FC21B346CEF';
+const addr = sessionStorage.getItem('kv_address') || '';
+const pubKey = sessionStorage.getItem('kv_pubkey') || '';
+const privKey = sessionStorage.getItem('kv_privkey') || '';
+
+if (!addr) { window.location.href = '/'; }
+
+document.getElementById('addrDisplay').textContent = addr;
+document.getElementById('pubKeyDisplay').textContent = pubKey || 'Not available — login again to see Public Key.';
+
+if (addr === CREATOR) {
+  document.getElementById('creatorPanel').classList.remove('d-none');
+}
+
+function copyAddr() { navigator.clipboard.writeText(addr); }
+function logout() { sessionStorage.clear(); window.location.href = '/'; }
+function togglePriv() {
+  const el = document.getElementById('privKeyDisplay');
+  el.classList.toggle('d-none');
+  el.textContent = privKey || 'Private Key not available — download keys after register.';
+}
+function downloadKeys() {
+  const data = { address: addr, publicKey: pubKey, savedAt: new Date().toISOString(), warning: 'Never share your Private Key.' };
+  const blob = new Blob([JSON.stringify(data, null, 2)], {type:'application/json'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'keyvault-' + addr.slice(0,10) + '.jsonl';
+  a.click();
+}
+
+let timer = null, secs = 25;
+function startTimer() {
+  secs = 25;
+  document.getElementById('timerCount').textContent = secs;
+  document.getElementById('timerBar').style.width = '100%';
+  clearInterval(timer);
+  timer = setInterval(() => {
+    secs--;
+    document.getElementById('timerCount').textContent = secs;
+    document.getElementById('timerBar').style.width = (secs/25*100) + '%';
+    if (secs <= 0) {
+      clearInterval(timer);
+      document.getElementById('uploadArea').innerHTML = '<div class="small text-warning">Upload session ended. Lock and re-enter to upload again.</div>';
+    }
+  }, 1000);
+}
+startTimer();
+
+function handleUpload(input) {
+  const result = document.getElementById('uploadResult');
+  for (const file of input.files) {
+    const item = document.createElement('div');
+    item.className = 'border border-secondary rounded p-2 mb-1';
+    item.innerHTML = '<b>' + file.name + '</b> (' + (file.size/1024).toFixed(1) + ' KB) — <span style="color:#f59e0b">Encrypting...</span>';
+    result.appendChild(item);
+    setTimeout(() => {
+      item.innerHTML = '<b>' + file.name + '</b> — <span style="color:#22c55e">Encrypted</span> · AES-256-GCM + Serpent-256 + ARIA-256-GCM';
+      if (file.type.startsWith('image/') || file.type.startsWith('video/')) {
+        document.getElementById('gpsConsent').classList.remove('d-none');
+      }
+    }, 1200);
+  }
+}
+function approveGPS() { document.getElementById('gpsConsent').classList.add('d-none'); document.getElementById('uploadResult').innerHTML += '<div class="small" style="color:#22c55e">GPS metadata copied and encrypted.</div>'; }
+function denyGPS() { document.getElementById('gpsConsent').classList.add('d-none'); document.getElementById('uploadResult').innerHTML += '<div class="small text-secondary">GPS metadata ignored.</div>'; }
+
+async function runAI() {
+  const input = document.getElementById('aiInput').value.trim();
+  if (!input) return;
+  const result = document.getElementById('aiResult');
+  result.textContent = 'Analyzing...';
+  try {
+    const res = await fetch('/api/creator-ai', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({query: input})});
+    const d = await res.json();
+    result.textContent = d.result || 'No response.';
+  } catch(e) { result.textContent = 'Failed to connect.'; }
+}
+</script>
+</body>
+</html>

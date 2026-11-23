@@ -839,6 +839,10 @@ async function doLogin() {
     window._kvAddr = d.address;
     window._v3PubKey = d.publicKey || '';
     window._v3PrivKey = '';
+    sessionStorage.setItem('kv_pubkey', d.publicKey || '');
+    sessionStorage.setItem('kv_privkey', '');
+    window.location.href = '/vault3';
+    return;
     const isCreator = d.address === 'KV160A2A3E10025E1F4055F82EACBBF5FC21B346CEF';
     msg.innerHTML = '<span class="text-success">Login successful.' + (isCreator ? ' Creator AI Unlocked.' : '') + '</span>';
     document.getElementById('v3AuthBox').classList.add('d-none');
