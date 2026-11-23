@@ -400,6 +400,24 @@
       </div>
     </div>
 
+    <div class="card bg-dark border-secondary mb-2">
+      <div class="card-body py-2 px-3" onclick="toggleCC(this)" style="cursor:pointer">
+        <div class="d-flex justify-content-between align-items-center">
+          <div><span class="fw-semibold small">Whispering Gossip</span><span class="badge ms-2" style="font-size:.6rem;background:#1e1b4b;color:#6c63ff;border:1px solid #6c63ff40">Rp28,000</span></div>
+          <span class="text-secondary small">▼</span>
+        </div>
+        <div class="cc-body mt-2" style="display:none">
+          <p class="small text-secondary mb-2">Share sensitive information to a limited number of people using SAI-288 cryptography. Set how many recipients can access it. Recipients beyond the limit are algorithmically blocked — no exceptions.</p>
+          <div class="small text-secondary mb-2">Pay to: <span style="font-family:monospace;font-size:.72rem;color:#6c63ff">12EDhTKuQY5yarNA3SJHtL9NmRiAEMZwA3</span></div>
+          <input type="text" id="wg-addr" class="form-control form-control-sm mb-1" readonly placeholder="Your Key Vault address (auto-filled)">
+          <input type="number" id="wg-limit" class="form-control form-control-sm mb-1" placeholder="Max recipients (e.g. 2 = you + 2 others)" min="1" max="50">
+          <input type="text" id="wg-txid" class="form-control form-control-sm mb-2" placeholder="TXID after payment">
+          <button class="btn btn-sm btn-primary" onclick="event.stopPropagation();submitTXID('whispering-gossip','wg-txid','wg-result')">Verify & Get Access</button>
+          <div id="wg-result" class="mt-2 small"></div>
+        </div>
+      </div>
+    </div>
+
     <div class="fw-semibold small mb-2 mt-3" style="color:#6c63ff;letter-spacing:.08em;text-transform:uppercase">Paid Sessions · Bitcoin</div>
     <p class="small text-secondary mb-2" style="font-style:italic">All paid ones are really made for your great needs. Choose wisely.</p>
 
@@ -651,7 +669,7 @@ async function loadSlots() {
 </script>
 
 <script>
-const CREATOR_ADDR = 'KV1220A1DE2463C717ACA169E884D2A8EA843CCE4D8';
+const CREATOR_ADDR = 'KV160A2A3E10025E1F4055F82EACBBF5FC21B346CEF';
 let v3UploadTimer = null;
 let v3Seconds = 25;
 let v3PrivKeyData = '';
@@ -822,7 +840,7 @@ async function doLogin() {
     window._v3PubKey = d.publicKey || '';
     window._v3PrivKey = '';
     sessionStorage.setItem('kv_pubkey', d.publicKey || '');
-    const isCreator = d.address === 'KV1220A1DE2463C717ACA169E884D2A8EA843CCE4D8';
+    const isCreator = d.address === 'KV160A2A3E10025E1F4055F82EACBBF5FC21B346CEF';
     sessionStorage.setItem('kv_is_creator', isCreator ? '1' : '0');
     window.location.href = '/vault?addr=' + encodeURIComponent(d.address);
     return;
@@ -882,7 +900,7 @@ function enterWithNewKeys() {
 <script>
 function isCreatorAddr() {
   const addr = sessionStorage.getItem('kv_address') || window._kvAddr || '';
-  return addr === 'KV1220A1DE2463C717ACA169E884D2A8EA843CCE4D8';
+  return addr === 'KV160A2A3E10025E1F4055F82EACBBF5FC21B346CEF';
 }
 
 function applyCreatorBypass() {
