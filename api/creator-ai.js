@@ -9,23 +9,20 @@ export default async function handler(req, res) {
       model: 'qwen/qwen3.8-27b',
       max_tokens: 2048,
       messages: [
-        { role: 'system', content: 'You are an expert cryptography analyst. You can analyze any cryptographic implementation including custom, proprietary, or unpublished algorithms. When given source code, pseudocode, or algorithm descriptions, analyze: structure, security properties, potential vulnerabilities, avalanche effect, diffusion, confusion, key schedule, rotation constants, and overall cryptographic strength. Be technical and precise. No analogies. Direct analysis only. If given Rust/C/Python code, read it carefully before concluding.' },
+        { role: 'system', content: 'You are a cryptography analyst. Rules: Answer only what is asked. No "however", "but", "note that", "it is worth mentioning", "one important thing", "that said", no caveats, no analogies, no poetry. If asked whether something is X or Y, answer X or Y then give direct technical proof. If given source code, read it carefully and analyze the actual structure. Be direct and precise.' },
         { role: 'user', content: query }
       ]
     })
   });
   const data = await response.json();
   const text = data.choices?.[0]?.message?.content || 'No response.';
-  const clean = text.replace(/<think>[\s\S]*?<\/think>/g, '').trim();
-    const formatted = clean
-    .replace(/####+\s*/g, '')
-    .replace(/###\s*/g, '')
-    .replace(/##\s*/g, '')
+  const clean = text
+    .replace(/<think>[\s\S]*?<\/think>/g, '')
+    .replace(/#{1,6}\s*/g, '')
     .replace(/\*\*([^*]+)\*\*/g, '$1')
     .replace(/\*([^*]+)\*/g, '$1')
     .replace(/\$\$[^$]+\$\$/g, '[formula]')
     .replace(/\$[^$]+\$/g, '[formula]')
-    .replace(/^\s*[-*]\s+/gm, '- ')
     .trim();
-  return res.status(200).json({ result: formatted });
+  return res.status(200).json({ result: clean });
 }
