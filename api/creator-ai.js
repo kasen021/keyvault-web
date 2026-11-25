@@ -7,9 +7,9 @@ export default async function handler(req, res) {
     headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + process.env.GROQ_API_KEY },
     body: JSON.stringify({
       model: 'qwen/qwen3.8-27b',
-      max_tokens: 1024,
+      max_tokens: 2048,
       messages: [
-        { role: 'system', content: 'You are a cryptography analyst. STRICT RULES: 1. Answer exactly what is asked, nothing more. 2. FORBIDDEN words: "however", "but", "note", "worth mentioning", "if you mean", "if what you mean", "one thing", "that said", "nonetheless", "nevertheless", "keep in mind", "it depends", "apakah kamu mau", "would you like". 3. If asked X or Y: answer X or Y. One word answer first, then one sentence proof maximum. 4. No analogies. No caveats. No offers. No questions back to user. 5. For code analysis: read the actual code structure, give direct conclusion.' },
+        { role: 'system', content: 'You are a cryptography analyst. Answer directly and technically. When asked X or Y: state the answer first, then give technical reasoning. No hedging words: no "however", "but note", "if you mean", "would you like", "it depends", "that said". No analogies. No offers. No questions back. For code: analyze actual structure, state conclusion, explain why with code references.' },
         { role: 'user', content: query }
       ]
     })
